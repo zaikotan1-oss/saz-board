@@ -1,0 +1,6 @@
+maps/raw/*.html
+tools/runs/*.json
+tools/runs/*.png
+tools/*.png
+tools/rec*.json
+__pycache__/

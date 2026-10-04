@@ -1,0 +1,134 @@
+{
+ "note": "ゲーム内の武器画面に出る「機動力」。走る速さに比例するかは未確認（実測は未実施）。出典: saz.wiki 武器一覧（2026-08-05 更新）、gamerch SAZ攻略Wiki（2026-07-31）。P90 の値は 08-06 のパッチ（ダメージ34→33・命中率77→76）で機動力は変更なし。",
+ "base": "P90",
+ "weapons": [
+  {
+   "name": "ナイフ",
+   "type": "近接",
+   "mobility": null,
+   "memo": "表示なし。最速の基準にしたいので実測待ち",
+   "measured_sec": 8.97,
+   "measured_speed_vs_knife": 1.0
+  },
+  {
+   "name": "D.Eagle / G18 / P30L",
+   "type": "拳銃",
+   "mobility": 70
+  },
+  {
+   "name": "KRISS",
+   "type": "SMG",
+   "mobility": 60
+  },
+  {
+   "name": "MP5",
+   "type": "SMG",
+   "mobility": 60
+  },
+  {
+   "name": "P90",
+   "type": "SMG",
+   "mobility": 59,
+   "focus": true,
+   "measured_sec": 9.07,
+   "measured_speed_vs_knife": 0.989
+  },
+  {
+   "name": "M24",
+   "type": "SR",
+   "mobility": 55
+  },
+  {
+   "name": "M4A1",
+   "type": "AR",
+   "mobility": 54
+  },
+  {
+   "name": "FAMAS",
+   "type": "AR",
+   "mobility": 54
+  },
+  {
+   "name": "AK-47",
+   "type": "AR",
+   "mobility": 53,
+   "focus": true,
+   "measured_sec": 9.44,
+   "measured_speed_vs_knife": 0.95,
+   "memo": "未計測。機動力が同じ SCAR の値を流用（本人判断 2026-10-04）"
+  },
+  {
+   "name": "SCAR",
+   "type": "AR",
+   "mobility": 53,
+   "measured_sec": 9.44,
+   "measured_speed_vs_knife": 0.95
+  },
+  {
+   "name": "M870 / Super-Shorty",
+   "type": "SG",
+   "mobility": 53
+  },
+  {
+   "name": "M16A4",
+   "type": "AR",
+   "mobility": 51
+  },
+  {
+   "name": "AWP",
+   "type": "SR",
+   "mobility": 46
+  },
+  {
+   "name": "SVD",
+   "type": "SR",
+   "mobility": 45
+  },
+  {
+   "name": "M249",
+   "type": "LMG",
+   "mobility": 41,
+   "focus": true,
+   "measured_sec": 12.15,
+   "measured_speed_vs_knife": 0.738,
+   "memo": "実機の表示は 41（Wiki は 44）"
+  }
+ ],
+ "measure_plan": {
+  "course": "第3補給倉庫 Bロング（Bテラス側の入口 → タワー上下 の壁）",
+  "method": "武器ごとに同じ地点から W 押しっぱなしで壁に当たるまでの秒数。各3回の中央値。ナイフを 1.00 とした比を出す",
+  "status": "2026-10-04 実施。コースは第3補給倉庫の段差（本人が位置決め）。しゃがみ・AK は未計測",
+  "items": [
+   "武器4種（ナイフ・P90・AK-47・M249）× 姿勢3種（走り・歩き・しゃがみ）＝ 12 通り、各3回"
+  ],
+  "questions": [
+   "歩きの比は武器に依らず一定か（武器ごとに測って確かめる）"
+  ]
+ },
+ "stances": [
+  {
+   "name": "走り（通常移動）",
+   "ratio": 1.0,
+   "memo": "基準。武器ごとの機動力が掛かる",
+   "measured": "武器ごと（weapons の measured_sec）"
+  },
+  {
+   "name": "歩き（Shift 押しっぱなし）",
+   "ratio": null,
+   "memo": "実測 2026-10-04: M249 13.49 / P90 13.45 → 武器に依らず同じ。ナイフ走りの 0.67 倍（M249 走りの 0.90 倍）",
+   "ratio_vs_knife_run": 0.666,
+   "measured_sec": 13.47
+  },
+  {
+   "name": "しゃがみ移動（Ctrl）",
+   "ratio": null,
+   "memo": "同上。数値なし → 実測待ち"
+  }
+ ],
+ "measured_course": {
+  "name": "第3補給倉庫 段差コース（本人設定）",
+  "knife_run_sec": 8.97,
+  "date": "2026-10-04",
+  "method": "本人が位置と武器を整える→Claude が W（歩きは Shift+W）を押しっぱなし→画面中央の景色の変化が走行時水準から壁水準に落ちるまでの秒数。1本ごとに本人がスタートへ戻す"
+ }
+}

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAZ 作戦ボード</title>
+<style>
+  :root { --bg:#1b1d22; --panel:#262930; --line:#3a3e48; --text:#e8e8ec; --sub:#9aa0ad; --atk:#e03b3b; --def:#2f7de1; --acc:#f2b705; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:"Segoe UI","Yu Gothic UI","Meiryo",sans-serif; font-size:14px; }
+  header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--line); }
+  header h1 { font-size:16px; margin:0 12px 0 0; color:var(--acc); }
+  select, input[type=text], button, textarea { background:#30343d; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:5px 8px; font-size:13px; }
+  button { cursor:pointer; } button:hover { background:#3b404b; } button.on { background:var(--acc); color:#000; border-color:var(--acc); font-weight:bold; }
+  button.danger:hover { background:#7a2a2a; }
+  main { display:grid; grid-template-columns: 1fr 300px; gap:0; height: calc(100vh - 54px); }
+  #stage { position:relative; overflow:auto; display:flex; align-items:flex-start; justify-content:center; padding:10px; background:#111; }
+  canvas#board { max-width:100%; height:auto; background:#222; border:1px solid var(--line); cursor:crosshair; touch-action:none; image-rendering:auto; }
+  aside { background:var(--panel); border-left:1px solid var(--line); padding:10px; overflow:auto; display:flex; flex-direction:column; gap:10px; }
+  aside h2 { font-size:13px; margin:4px 0 2px; color:var(--sub); border-bottom:1px solid var(--line); padding-bottom:3px; }
+  .row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .tools button { min-width:64px; }
+  textarea { width:100%; min-height:90px; resize:vertical; }
+  .hint { color:var(--sub); font-size:12px; line-height:1.5; }
+  #drop { position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(242,183,5,.25); font-size:22px; font-weight:bold; pointer-events:none; }
+  #stage.drag #drop { display:flex; }
+  .pieceList { display:flex; flex-wrap:wrap; gap:4px; }
+  .pieceList button { padding:3px 7px; }
+  .pieceList button.atk { border-color:var(--atk); } .pieceList button.def { border-color:var(--def); }
+  .pieceList button.sel { outline:2px solid var(--acc); }
+  label.small { font-size:12px; color:var(--sub); }
+  @media (max-width: 900px) { main { grid-template-columns:1fr; height:auto; } aside { border-left:none; border-top:1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>SAZ 作戦ボード</h1>
+  <label class="small">マップ</label><select id="mapSel"></select>
+  <label class="small">パターン</label><select id="patSel"><option value="">（新規）</option></select>
+  <input type="text" id="title" placeholder="作戦名（例：Aラッシュ）" size="22">
+  <button id="btnNew">新規</button>
+  <button id="btnSave">保存</button>
+  <button id="btnPng">PNG書き出し</button>
+  <button id="btnJson">JSON書き出し</button>
+  <button id="btnLoadJson">JSON読み込み</button>
+  <button id="btnBg">下地画像</button>
+  <button id="btnBgReset" title="下地を元の俯瞰図に戻す">下地を戻す</button>
+  <input type="file" id="fileJson" accept=".json" hidden>
+  <input type="file" id="fileBg" accept="image/*" hidden>
+</header>
+<main>
+  <div id="stage">
+    <canvas id="board"></canvas>
+    <div id="drop">画像を離すと下地になります</div>
+  </div>
+  <aside>
+    <h2>道具</h2>
+    <div class="row tools">
+      <button data-mode="move" class="on">移動</button>
+      <button data-mode="route">経路</button>
+      <button data-mode="smoke">煙</button>
+      <button data-mode="flash">閃光</button>
+      <button data-mode="bomb">C4</button>
+      <button data-mode="text">文字</button>
+      <button data-mode="erase" class="danger">消す</button>
+    </div>
+    <div class="hint" id="modeHint"></div>
+    <h2>駒</h2>
+    <div class="pieceList" id="pieceList"></div>
+    <div class="row">
+      <button id="addAtk">＋攻め</button><button id="addDef">＋守り</button>
+      <button id="resetPieces" title="攻め5・守り5をリスポ位置に並べ直す">初期配置</button>
+    </div>
+    <div class="row" id="pieceEdit" style="display:none">
+      <label class="small">役割</label><select id="roleSel"></select>
+      <button id="clearPath">経路を消す</button>
+      <button id="delPiece" class="danger">駒を消す</button>
+    </div>
+    <h2>表示</h2>
+    <div class="row">
+      <label><input type="checkbox" id="showCallouts" checked> 地名</label>
+      <label><input type="checkbox" id="showDef" checked> 守りの駒</label>
+      <label><input type="checkbox" id="showRoles" checked> 役割名</label>
+    </div>
+    <h2>手順メモ（PNG の下に入ります）</h2>
+    <textarea id="note" placeholder="①開幕 煙2つで Bロングを塞ぐ&#10;②閃光→3人でB入り&#10;③ラークは…"></textarea>
+    <div class="hint">
+      ・<b>移動</b>: 駒・経路の点・印をドラッグ。駒をクリックで選択。<br>
+      ・<b>経路</b>: 駒を選んでから地図をクリックすると順番つきの矢印が伸びる。点をダブルクリックで時間や合図の文字を入れる。<br>
+      ・<b>煙/閃光/C4/文字</b>: 置きたい所をクリック。<br>
+      ・<b>消す</b>: 駒・点・印をクリックで削除。Delete キーでも選択中の駒の最後の点を消せる。<br>
+      ・下地はゲーム内の全体図のスクショをこの画面にドロップすれば差し替わる（マップごとに覚える）。
+    </div>
+    <h2>武器の機動力（<a href="data/mobility.md" style="color:#f2b705">詳しくは data/mobility.md</a>）</h2>
+    <table id="mobTbl" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+    <div class="hint">実測は 2026-10-04 第3補給倉庫の段差コース（W 押しっぱなしで壁まで）。機動力は速さにほぼ比例、歩きは武器に依らず同じ。</div>
+  </aside>
+</main>
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const cv = $('#board'), ctx = cv.getContext('2d');
+let DB = null, MAP = null, bgImg = null, bgOverride = null;
+let mode = 'move', selPiece = null, selWp = null, drag = null, presets = [];
+let pat = newPattern('supply3');
+const LS_PAT = 'saz-board-patterns', LS_BG = 'saz-board-bg-';
+const COL = { atk:'#e03b3b', def:'#2f7de1' };
+const CIRC = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫'];
+
+function newPattern(mapId){ return { map:mapId, title:'', note:'', pieces:[], marks:[] }; }
+function mapById(id){ return DB.maps.find(m => m.id === id) || DB.maps[0]; }
+
+// ---------- 読み込み ----------
+async function init(){
+  DB = await (await fetch('maps/maps.json')).json();
+  try { presets = await (await fetch('patterns/index.json')).json(); } catch(e){ presets = []; }
+  for (const m of DB.maps) { const o = document.createElement('option'); o.value = m.id; o.textContent = m.name; $('#mapSel').appendChild(o); }
+  for (const r of DB.roles) { const o = document.createElement('option'); o.value = r; o.textContent = r; $('#roleSel').appendChild(o); }
+  const q = new URLSearchParams(location.search);
+  if (q.get('pattern')) {
+    const p = await (await fetch(q.get('pattern'))).json();
+    await setPattern(p); refreshPatSel(); $('#patSel').value = 'preset:' + q.get('pattern');
+  } else {
+    await setMap('supply3'); resetPieces();
+  }
+  if (q.get('export')) document.body.classList.add('export');
+  refreshPatSel();
+  try {
+    const W = await (await fetch('data/weapons.json')).json();
+    const base = W.weapons.find(w => w.name === W.base).mobility;
+    $('#mobTbl').innerHTML = '<tr style="color:#9aa0ad"><td>武器</td><td>機動力</td><td>実測 秒</td><td>速さ(ナイフ=1)</td></tr>' +
+      W.weapons.map(w => `<tr style="${w.focus ? 'color:#f2b705;font-weight:bold' : ''}"><td>${w.name}</td><td>${w.mobility ?? '?'}</td><td>${w.measured_sec ?? ''}</td><td>${w.measured_speed_vs_knife ?? ''}</td></tr>`).join('') +
+      (W.stances || []).filter(s => s.measured_sec).map(s => `<tr><td>${s.name}</td><td>―</td><td>${s.measured_sec}</td><td>${s.ratio_vs_knife_run}</td></tr>`).join('');
+  } catch(e) {}
+}
+async function setMap(id){
+  MAP = mapById(id); pat.map = id; $('#mapSel').value = id;
+  cv.width = MAP.w; cv.height = MAP.h;
+  $('#showCallouts').checked = !MAP.labelsInImage;
+  bgOverride = null;
+  try { const d = localStorage.getItem(LS_BG + id); if (d) bgOverride = await loadImg(d); } catch(e){}
+  bgImg = MAP.image ? await loadImg(MAP.image) : null;
+  refreshPatSel(); draw();
+}
+function loadImg(src){ return new Promise((ok, ng) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ng; i.src = src; }); }
+async function setPattern(p){
+  pat = JSON.parse(JSON.stringify(p));
+  pat.pieces = pat.pieces || []; pat.marks = pat.marks || [];
+  for (const pc of pat.pieces) pc.path = pc.path || [];
+  await setMap(pat.map);
+  $('#title').value = pat.title || ''; $('#note').value = pat.note || '';
+  selPiece = null; renderPieceList(); draw();
+}
+function resetPieces(){
+  pat.pieces = []; pat.marks = [];
+  const sp = MAP.spawn;
+  for (let i = 0; i < 5; i++) {
+    pat.pieces.push({ team:'atk', n:i+1, role:['エントリー','爆弾持ち','スモーク','援護','ラーク'][i], x: sp.atk[0] + (i<3 ? (i-1)*48 : (i-3.5)*48), y: sp.atk[1] + (i<3 ? 0 : 36), path:[] });
+    pat.pieces.push({ team:'def', n:i+1, role:['アンカー','アンカー','ローテ','スナイパー','情報取り'][i], x: sp.def[0] + (i<3 ? (i-1)*48 : (i-3.5)*48), y: sp.def[1] + (i<3 ? 0 : 36), path:[] });
+  }
+  selPiece = null; renderPieceList(); draw();
+}
+
+// ---------- パターン一覧 ----------
+function savedList(){ try { return JSON.parse(localStorage.getItem(LS_PAT) || '[]'); } catch(e){ return []; } }
+function refreshPatSel(){
+  const sel = $('#patSel'); sel.innerHTML = '<option value="">（新規）</option>';
+  const g1 = document.createElement('optgroup'); g1.label = '見本';
+  presets.filter(p => p.map === pat.map).forEach(p => { const o = document.createElement('option'); o.value = 'preset:' + p.file; o.textContent = p.title; g1.appendChild(o); });
+  const g2 = document.createElement('optgroup'); g2.label = '保存済み';
+  savedList().forEach((p, i) => { if (p.map !== pat.map) return; const o = document.createElement('option'); o.value = 'saved:' + i; o.textContent = p.title || '(無題)'; g2.appendChild(o); });
+  if (g1.children.length) sel.appendChild(g1);
+  if (g2.children.length) sel.appendChild(g2);
+}
+
+// ---------- 描画 ----------
+function strokeText(t, x, y, size, color, align='center', weight='bold'){
+  ctx.font = `${weight} ${size}px "Yu Gothic UI","Meiryo",sans-serif`; ctx.textAlign = align; ctx.textBaseline = 'middle';
+  ctx.lineWidth = Math.max(3, size/4); ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.lineJoin = 'round';
+  ctx.strokeText(t, x, y); ctx.fillStyle = color; ctx.fillText(t, x, y);
+}
+function arrow(x1, y1, x2, y2, color, w=4){
+  const a = Math.atan2(y2-y1, x2-x1), L = 11;
+  ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = w+3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(x2,y2);
+  ctx.lineTo(x2 - L*Math.cos(a-0.45), y2 - L*Math.sin(a-0.45)); ctx.lineTo(x2 - L*Math.cos(a+0.45), y2 - L*Math.sin(a+0.45)); ctx.closePath(); ctx.fill();
+}
+function draw(c = ctx){
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0,0,W,H);
+  const img = bgOverride || bgImg;
+  if (img) {
+    const s = Math.min(W/img.width, H/img.height); const dw = img.width*s, dh = img.height*s;
+    ctx.fillStyle = '#000'; ctx.fillRect(0,0,W,H);
+    ctx.drawImage(img, (W-dw)/2, (H-dh)/2, dw, dh);
+  } else {
+    ctx.fillStyle = '#2b2e36'; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle = '#3c404a'; ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 50) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 50) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    strokeText('下地画像なし', W/2, H/2 - 16, 26, '#9aa0ad');
+    strokeText('ゲーム内の全体図のスクショをここにドロップ', W/2, H/2 + 18, 16, '#9aa0ad');
+  }
+  // 地名
+  if ($('#showCallouts').checked) for (const [n,x,y] of MAP.callouts) strokeText(n, x, y, 11, '#ffe79a', 'center', 'normal');
+  // サイト
+  for (const k of Object.keys(MAP.sites || {})) {
+    const [x,y] = MAP.sites[k];
+    ctx.fillStyle = 'rgba(242,183,5,.25)'; ctx.strokeStyle = '#f2b705'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, 26, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    strokeText(k, x, y, 22, '#f2b705');
+  }
+  const showDef = $('#showDef').checked, showRoles = $('#showRoles').checked;
+  const vis = pat.pieces.filter(p => showDef || p.team === 'atk');
+  // 経路
+  for (const p of vis) {
+    let px = p.x, py = p.y;
+    p.path.forEach((w, i) => { arrow(px, py, w.x, w.y, COL[p.team], p === selPiece ? 4 : 2.5); px = w.x; py = w.y; });
+  }
+  for (const p of vis) p.path.forEach((w, i) => {
+    ctx.fillStyle = COL[p.team]; ctx.strokeStyle = (w === selWp) ? '#f2b705' : '#fff'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(w.x, w.y, 9, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    strokeText(CIRC[i] || String(i+1), w.x, w.y, 12, '#fff');
+    if (w.label) strokeText(w.label, w.x + 14, w.y - 14, 12, '#fff', 'left');
+  });
+  // 印
+  for (const m of pat.marks) {
+    if (m.type === 'smoke') { ctx.fillStyle = 'rgba(200,200,200,.55)'; ctx.strokeStyle = '#ddd'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(m.x, m.y, 26, 0, Math.PI*2); ctx.fill(); ctx.stroke(); strokeText('煙', m.x, m.y, 14, '#222'); }
+    else if (m.type === 'flash') { ctx.fillStyle = 'rgba(255,240,120,.8)'; ctx.beginPath(); for (let i = 0; i < 16; i++) { const r = i % 2 ? 9 : 20, a = i*Math.PI/8; ctx.lineTo(m.x + r*Math.cos(a), m.y + r*Math.sin(a)); } ctx.closePath(); ctx.fill(); strokeText('閃', m.x, m.y, 12, '#333'); }
+    else if (m.type === 'bomb') { ctx.fillStyle = '#111'; ctx.strokeStyle = '#f2b705'; ctx.lineWidth = 2; ctx.beginPath(); ctx.rect(m.x-16, m.y-11, 32, 22); ctx.fill(); ctx.stroke(); strokeText('C4', m.x, m.y, 13, '#f2b705'); }
+    else if (m.type === 'text') { strokeText(m.text || '', m.x, m.y, 15, '#fff'); }
+  }
+  // 駒
+  for (const p of vis) {
+    const r = 15;
+    ctx.fillStyle = COL[p.team]; ctx.strokeStyle = (p === selPiece) ? '#f2b705' : '#fff'; ctx.lineWidth = (p === selPiece) ? 4 : 2.5;
+    ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    strokeText(String(p.n), p.x, p.y, 15, '#fff');
+    if (showRoles && p.role) strokeText(p.role, p.x, p.y + r + 9, 11, '#fff');
+  }
+}
+
+// ---------- 入力 ----------
+function pos(e){ const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * cv.width / r.width, y: (e.clientY - r.top) * cv.height / r.height }; }
+function hit(pt){
+  const showDef = $('#showDef').checked;
+  const vis = pat.pieces.filter(p => showDef || p.team === 'atk');
+  for (const p of [...vis].reverse()) if (Math.hypot(p.x-pt.x, p.y-pt.y) <= 16) return { kind:'piece', p };
+  for (const p of vis) for (const w of p.path) if (Math.hypot(w.x-pt.x, w.y-pt.y) <= 12) return { kind:'wp', p, w };
+  for (const m of [...pat.marks].reverse()) if (Math.hypot(m.x-pt.x, m.y-pt.y) <= (m.type==='smoke'?26:18)) return { kind:'mark', m };
+  return null;
+}
+cv.addEventListener('pointerdown', e => {
+  const pt = pos(e), h = hit(pt); cv.setPointerCapture(e.pointerId);
+  if (mode === 'erase') {
+    if (!h) return;
+    if (h.kind === 'piece') { pat.pieces = pat.pieces.filter(p => p !== h.p); if (selPiece === h.p) selPiece = null; renderPieceList(); }
+    else if (h.kind === 'wp') h.p.path = h.p.path.filter(w => w !== h.w);
+    else if (h.kind === 'mark') pat.marks = pat.marks.filter(m => m !== h.m);
+    draw(); return;
+  }
+  if (mode === 'smoke' || mode === 'flash' || mode === 'bomb') { pat.marks.push({ type:mode, x:pt.x, y:pt.y }); draw(); return; }
+  if (mode === 'text') { const t = prompt('文字'); if (t) { pat.marks.push({ type:'text', x:pt.x, y:pt.y, text:t }); draw(); } return; }
+  if (mode === 'route') {
+    if (h && h.kind === 'piece') { selectPiece(h.p); return; }
+    if (h && h.kind === 'wp') { selWp = h.w; drag = { o:h.w, dx:h.w.x-pt.x, dy:h.w.y-pt.y }; draw(); return; }
+    if (!selPiece) { alert('先に駒をクリックして選んでください'); return; }
+    selPiece.path.push({ x:pt.x, y:pt.y }); draw(); return;
+  }
+  // move
+  if (!h) { selPiece = null; selWp = null; renderPieceList(); draw(); return; }
+  if (h.kind === 'piece') { selectPiece(h.p); drag = { o:h.p, dx:h.p.x-pt.x, dy:h.p.y-pt.y }; }
+  else if (h.kind === 'wp') { selectPiece(h.p); selWp = h.w; drag = { o:h.w, dx:h.w.x-pt.x, dy:h.w.y-pt.y }; }
+  else if (h.kind === 'mark') { drag = { o:h.m, dx:h.m.x-pt.x, dy:h.m.y-pt.y }; }
+  draw();
+});
+cv.addEventListener('pointermove', e => { if (!drag) return; const pt = pos(e); drag.o.x = Math.round(pt.x + drag.dx); drag.o.y = Math.round(pt.y + drag.dy); draw(); });
+cv.addEventListener('pointerup', () => { drag = null; });
+cv.addEventListener('dblclick', e => {
+  const h = hit(pos(e)); if (!h) return;
+  if (h.kind === 'wp') { const t = prompt('この点の合図・時間（例：0:15 煙が消えたら）', h.w.label || ''); if (t !== null) { h.w.label = t; draw(); } }
+  else if (h.kind === 'mark' && h.m.type === 'text') { const t = prompt('文字', h.m.text); if (t !== null) { h.m.text = t; draw(); } }
+  else if (h.kind === 'piece') { const t = prompt('役割', h.p.role || ''); if (t !== null) { h.p.role = t; renderPieceList(); draw(); } }
+});
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'Escape') { setMode('move'); }
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (selWp && selPiece) { selPiece.path = selPiece.path.filter(w => w !== selWp); selWp = null; }
+    else if (selPiece) selPiece.path.pop();
+    draw();
+  }
+});
+function selectPiece(p){ selPiece = p; selWp = null; renderPieceList(); draw(); }
+function setMode(m){ mode = m; document.querySelectorAll('.tools button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  $('#modeHint').textContent = { move:'駒や点をドラッグ。駒をクリックで選択。', route:'駒を選んでから地図をクリック → 順番つきの矢印。Esc で移動に戻る。', smoke:'煙を置く所をクリック', flash:'閃光を置く所をクリック', bomb:'C4 の設置場所をクリック', text:'文字を置く所をクリック', erase:'消したい駒・点・印をクリック' }[m]; }
+document.querySelectorAll('.tools button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+setMode('move');
+
+function renderPieceList(){
+  const el = $('#pieceList'); el.innerHTML = '';
+  for (const p of pat.pieces) { const b = document.createElement('button'); b.className = p.team + (p === selPiece ? ' sel' : ''); b.textContent = (p.team === 'atk' ? '攻' : '守') + p.n + (p.role ? ' ' + p.role : ''); b.onclick = () => selectPiece(p); el.appendChild(b); }
+  $('#pieceEdit').style.display = selPiece ? '' : 'none';
+  if (selPiece) $('#roleSel').value = selPiece.role || '';
+}
+$('#roleSel').onchange = () => { if (selPiece) { selPiece.role = $('#roleSel').value; renderPieceList(); draw(); } };
+$('#clearPath').onclick = () => { if (selPiece) { selPiece.path = []; draw(); } };
+$('#delPiece').onclick = () => { if (selPiece) { pat.pieces = pat.pieces.filter(p => p !== selPiece); selPiece = null; renderPieceList(); draw(); } };
+function addPiece(team){ const n = pat.pieces.filter(p => p.team === team).length + 1; const sp = MAP.spawn[team]; pat.pieces.push({ team, n, role:'', x:sp[0], y:sp[1] + 14, path:[] }); renderPieceList(); draw(); }
+$('#addAtk').onclick = () => addPiece('atk'); $('#addDef').onclick = () => addPiece('def');
+$('#resetPieces').onclick = () => { if (confirm('駒と印を初期配置に戻します。経路も消えます。')) resetPieces(); };
+['showCallouts','showDef','showRoles'].forEach(id => $('#' + id).onchange = draw);
+$('#title').oninput = () => pat.title = $('#title').value;
+$('#note').oninput = () => pat.note = $('#note').value;
+$('#mapSel').onchange = async () => { pat = newPattern($('#mapSel').value); $('#title').value = ''; $('#note').value = ''; await setMap(pat.map); resetPieces(); };
+$('#patSel').onchange = async () => {
+  const v = $('#patSel').value; if (!v) return;
+  if (v.startsWith('preset:')) { const p = await (await fetch(v.slice(7))).json(); await setPattern(p); }
+  else { const p = savedList()[+v.slice(6)]; if (p) await setPattern(p); }
+  refreshPatSel(); $('#patSel').value = v;
+};
+$('#btnNew').onclick = () => { pat = newPattern(MAP.id); $('#title').value = ''; $('#note').value = ''; resetPieces(); refreshPatSel(); };
+$('#btnSave').onclick = () => {
+  pat.title = $('#title').value || prompt('作戦名') || '(無題)'; $('#title').value = pat.title;
+  const list = savedList(); const i = list.findIndex(p => p.map === pat.map && p.title === pat.title);
+  if (i >= 0) list[i] = JSON.parse(JSON.stringify(pat)); else list.push(JSON.parse(JSON.stringify(pat)));
+  try { localStorage.setItem(LS_PAT, JSON.stringify(list)); } catch(e) { alert('ブラウザに保存できませんでした。JSON書き出しを使ってください。'); }
+  refreshPatSel(); alert('保存しました: ' + pat.title);
+};
+function dl(name, href){ const a = document.createElement('a'); a.href = href; a.download = name; a.click(); }
+$('#btnJson').onclick = () => { pat.title = $('#title').value; pat.note = $('#note').value; dl(`${pat.map}-${pat.title || 'pattern'}.json`, 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(pat, null, 1))); };
+$('#btnLoadJson').onclick = () => $('#fileJson').click();
+$('#fileJson').onchange = async e => { const f = e.target.files[0]; if (!f) return; await setPattern(JSON.parse(await f.text())); e.target.value = ''; };
+$('#btnBg').onclick = () => $('#fileBg').click();
+$('#fileBg').onchange = async e => { const f = e.target.files[0]; if (f) await useBgFile(f); e.target.value = ''; };
+$('#btnBgReset').onclick = () => { try { localStorage.removeItem(LS_BG + MAP.id); } catch(e){} bgOverride = null; draw(); };
+async function useBgFile(f){
+  const data = await new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(f); });
+  bgOverride = await loadImg(data);
+  try { localStorage.setItem(LS_BG + MAP.id, data); } catch(e) { alert('画像が大きすぎてブラウザに記憶できません（今回だけ使います）'); }
+  draw();
+}
+const stage = $('#stage');
+stage.addEventListener('dragover', e => { e.preventDefault(); stage.classList.add('drag'); });
+stage.addEventListener('dragleave', () => stage.classList.remove('drag'));
+stage.addEventListener('drop', async e => { e.preventDefault(); stage.classList.remove('drag'); const f = e.dataTransfer.files[0]; if (f && f.type.startsWith('image/')) await useBgFile(f); });
+
+// ---------- PNG 書き出し ----------
+function exportDataURL(scale = 2){
+  pat.title = $('#title').value; pat.note = $('#note').value;
+  draw();
+  const head = 48, lines = (pat.note || '').split('\n').filter(s => s.trim()), lineH = 20, foot = lines.length ? 14 + lines.length * lineH + 10 : 0, legend = 30;
+  const W = cv.width, H = cv.height + head + legend + foot;
+  const oc = document.createElement('canvas'); oc.width = W * scale; oc.height = H * scale; const o = oc.getContext('2d'); o.scale(scale, scale);
+  o.fillStyle = '#15161a'; o.fillRect(0, 0, W, H);
+  o.font = 'bold 22px "Yu Gothic UI","Meiryo",sans-serif'; o.fillStyle = '#f2b705'; o.textBaseline = 'middle'; o.textAlign = 'left';
+  o.fillText(`${MAP.name}　${pat.title || ''}`, 12, head/2);
+  o.font = '12px "Yu Gothic UI","Meiryo",sans-serif'; o.fillStyle = '#9aa0ad'; o.textAlign = 'right'; o.fillText('SAZ 作戦ボード', W - 12, head/2);
+  o.drawImage(cv, 0, head);
+  // 凡例
+  let y = head + cv.height + legend/2, x = 12;
+  const item = (color, label) => { o.fillStyle = color; o.beginPath(); o.arc(x + 8, y, 8, 0, Math.PI*2); o.fill(); o.font = '13px "Yu Gothic UI","Meiryo",sans-serif'; o.fillStyle = '#e8e8ec'; o.textAlign = 'left'; o.fillText(label, x + 22, y); x += 22 + o.measureText(label).width + 18; };
+  item(COL.atk, '攻め'); item(COL.def, '守り'); item('#bbb', '煙'); item('#ffe066', '閃光'); item('#f2b705', 'A/B サイト');
+  o.font = '13px "Yu Gothic UI","Meiryo",sans-serif'; o.fillStyle = '#e8e8ec'; o.fillText('①②③ = 動く順番', x, y);
+  // メモ
+  o.font = '14px "Yu Gothic UI","Meiryo",sans-serif'; o.fillStyle = '#e8e8ec'; o.textAlign = 'left';
+  lines.forEach((s, i) => o.fillText(s, 14, head + cv.height + legend + 14 + i * lineH + lineH/2));
+  return oc.toDataURL('image/png');
+}
+$('#btnPng').onclick = () => dl(`${MAP.name}_${$('#title').value || 'pattern'}.png`, exportDataURL());
+window.__board = { exportDataURL, get pat(){ return pat; }, setPattern, draw, get ready(){ return !!MAP; } };
+init();
+})();
+</script>
+</body>
+</html>

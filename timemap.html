@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAZ 移動時間マップ</title>
+<style>
+  :root { --bg:#1b1d22; --panel:#262930; --line:#3a3e48; --text:#e8e8ec; --sub:#9aa0ad; --atk:#e03b3b; --def:#2f7de1; --acc:#f2b705; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:"Yu Gothic UI","Meiryo",sans-serif; font-size:14px; }
+  header { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--line); }
+  header h1 { font-size:16px; margin:0 8px 0 0; color:var(--acc); }
+  select, button { background:#30343d; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:5px 8px; font-size:14px; }
+  .wsel button.on { background:var(--acc); color:#000; border-color:var(--acc); font-weight:bold; }
+  main { display:grid; grid-template-columns: 1fr 380px; gap:0; }
+  #stage { padding:10px; background:#111; display:flex; justify-content:center; align-items:flex-start; }
+  canvas { max-width:100%; height:auto; border:1px solid var(--line); }
+  aside { background:var(--panel); border-left:1px solid var(--line); padding:10px; overflow:auto; max-height:calc(100vh - 54px); }
+  aside h2 { font-size:13px; color:var(--sub); margin:10px 0 4px; border-bottom:1px solid var(--line); }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  td { padding:2px 4px; border-bottom:1px solid #30343d; } td.n { text-align:right; font-weight:bold; color:var(--acc); }
+  .hint { color:var(--sub); font-size:12px; line-height:1.5; }
+  .warn { color:#ffb86b; font-size:12px; }
+  @media (max-width:900px){ main{ grid-template-columns:1fr; } aside{ max-height:none; border-left:none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>SAZ 移動時間マップ</h1>
+  <select id="mapSel"></select>
+  <span class="wsel" id="wsel"></span>
+  <label><input type="checkbox" id="showAll" checked> 全部の通路に秒数</label>
+  <button id="png">PNG書き出し</button>
+  <span id="calib" class="warn"></span>
+</header>
+<main>
+  <div id="stage"><canvas id="cv"></canvas></div>
+  <aside id="side"></aside>
+</main>
+<script>
+(async () => {
+const $ = s => document.querySelector(s);
+const cv = $('#cv'), ctx = cv.getContext('2d');
+const IDX = await (await fetch('data/timemap/index.json')).json();
+const DB = await (await fetch('maps/maps.json')).json();
+let G = null, img = null, weapon = 'p90';
+const q = new URLSearchParams(location.search);
+for (const m of IDX.maps) { const o = document.createElement('option'); o.value = m.map; o.textContent = m.name + (m.calibrated ? '' : '（縮尺 仮）'); $('#mapSel').appendChild(o); }
+for (const w of IDX.weapons) { const b = document.createElement('button'); b.textContent = w.label; b.dataset.id = w.id; b.onclick = () => { weapon = w.id; render(); }; $('#wsel').appendChild(b); }
+function W(){ return IDX.weapons.find(w => w.id === weapon); }
+function sec(knife){ return knife * W().factor; }
+function fmt(s){ return s.toFixed(1); }
+function strokeText(t, x, y, size, color, align='center'){ ctx.font = `bold ${size}px "Yu Gothic UI","Meiryo",sans-serif`; ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.lineWidth = Math.max(3, size/4); ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.lineJoin = 'round'; ctx.strokeText(t, x, y); ctx.fillStyle = color; ctx.fillText(t, x, y); }
+
+async function load(id){
+  G = await (await fetch(`data/timemap/${id}.json`)).json();
+  const m = DB.maps.find(x => x.id === id);
+  img = await new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.src = m.image; });
+  cv.width = img.width; cv.height = img.height;
+  if (!Object.keys(G.nodes).length) { $('#side').innerHTML = '<div class="hint">このマップはまだ点が置かれていません。editor.html で点と通路を置いて保存してください。</div>'; }
+  $('#calib').textContent = G.calibrated ? `縮尺: 実測（${G.calib.note}）` : '縮尺: 第3補給倉庫の値を仮に流用（未校正。この地図で1本走れば校正できます）';
+  render();
+}
+function render(){
+  document.querySelectorAll('.wsel button').forEach(b => b.classList.toggle('on', b.dataset.id === weapon));
+  ctx.drawImage(img, 0, 0);
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(0, 0, cv.width, cv.height);
+  const kind = n => G.attack.includes(n) ? 'atk' : G.defend.includes(n) ? 'def' : 'other';
+  // 通路
+  for (const e of G.edges) {
+    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 3; ctx.setLineDash([]);
+    ctx.beginPath(); e.pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke();
+    if ($('#showAll').checked) {
+      // 中点に秒数
+      let L = 0; const segs = []; for (let i = 0; i < e.pts.length - 1; i++) { const d = Math.hypot(e.pts[i+1][0]-e.pts[i][0], e.pts[i+1][1]-e.pts[i][1]); segs.push(d); L += d; }
+      let h = L / 2, mx = e.pts[0][0], my = e.pts[0][1];
+      for (let i = 0; i < segs.length; i++) { if (h <= segs[i]) { const t = h / segs[i]; mx = e.pts[i][0] + (e.pts[i+1][0]-e.pts[i][0]) * t; my = e.pts[i][1] + (e.pts[i+1][1]-e.pts[i][1]) * t; break; } h -= segs[i]; }
+      const s = sec(e.px / G.px_per_knife_sec);
+      ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.beginPath(); ctx.roundRect(mx - 20, my - 10, 40, 20, 5); ctx.fill();
+      strokeText(fmt(s) + 's', mx, my, 12, '#fff');
+    }
+  }
+  // 地点
+  for (const [n, p] of Object.entries(G.nodes)) {
+    const k = kind(n); const r = k === 'other' ? 7 : 11;
+    ctx.fillStyle = k === 'atk' ? '#e03b3b' : k === 'def' ? '#2f7de1' : '#888'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    strokeText(n, p[0], p[1] - r - 9, k === 'other' ? 11 : 13, k === 'atk' ? '#ffb3b3' : k === 'def' ? '#b3d1ff' : '#ddd');
+  }
+  // 凡例
+  const lg = [['#e03b3b', '攻めポイント'], ['#2f7de1', '守りポイント'], ['#888', '通過点']];
+  let x = 12, y = cv.height - 16;
+  ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(0, cv.height - 32, 560, 32);
+  for (const [c, t] of lg) { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x + 8, y, 7, 0, Math.PI*2); ctx.fill(); strokeText(t, x + 20, y, 12, '#fff', 'left'); x += 20 + ctx.measureText(t).width + 16; }
+  strokeText(`秒数 = ${W().label} で走った時間`, x + 8, y, 12, '#f2b705', 'left');
+  if (Object.keys(G.nodes).length) renderSide();
+}
+function renderSide(){
+  const T = G.tables; let h = `<div class="hint">地点をまたぐ時間は、白い通路に沿った最短路の合計。武器は上のボタンで切替。</div>`;
+  const tbl = rows => '<table>' + rows.map(r => `<tr><td>${r.from}</td><td>→</td><td>${r.to}</td><td class="n">${fmt(sec(r.knife_sec))}s</td></tr>`).join('') + '</table>';
+  for (const [name, rows] of Object.entries(T)) h += `<h2>${name}</h2>` + tbl(rows);
+  // 攻めポイント総当たり表（行列）
+  const A = G.attack; h += '<h2>攻めポイント間（行列）</h2><table><tr><td></td>' + A.map(a => `<td style="font-size:10px">${a}</td>`).join('') + '</tr>';
+  for (const a of A) h += `<tr><td style="font-size:11px">${a}</td>` + A.map(b => `<td class="n">${a === b ? '-' : (G.knife_sec[a][b] == null ? '―' : fmt(sec(G.knife_sec[a][b])))}</td>`).join('') + '</tr>';
+  // 全地点の行列
+  const N = G.all_names || Object.keys(G.nodes); h += '<h2>全地点間（行列）</h2><table><tr><td></td>' + N.map(a => `<td style="font-size:10px">${a}</td>`).join('') + '</tr>';
+  for (const a of N) h += `<tr><td style="font-size:11px">${a}</td>` + N.map(b => `<td class="n">${a === b ? '-' : (G.knife_sec[a][b] == null ? '―' : fmt(sec(G.knife_sec[a][b])))}</td>`).join('') + '</tr>';
+  h += '</table>';
+  h += '</table>';
+  $('#side').innerHTML = h;
+}
+function exportDataURL(scale = 2){
+  const head = 44, side = 420, W0 = cv.width;
+  const nrows = Object.values(G.tables).reduce((a, r) => a + r.length + 1, 0);
+  const H = Math.max(cv.height, 10 + nrows * 18 + 40) + head;
+  const oc = document.createElement('canvas'); oc.width = (W0 + side) * scale; oc.height = H * scale; const o = oc.getContext('2d'); o.scale(scale, scale);
+  o.fillStyle = '#15161a'; o.fillRect(0, 0, W0 + side, H);
+  o.font = 'bold 20px "Yu Gothic UI","Meiryo",sans-serif'; o.fillStyle = '#f2b705'; o.textBaseline = 'middle';
+  const mname = DB.maps.find(x => x.id === G.map).name;
+  o.fillText(`${mname}　移動時間マップ　［${W().label}］${G.calibrated ? '' : '　※縮尺は仮'}`, 12, head/2);
+  o.drawImage(cv, 0, head);
+  // 右の表
+  let y = head + 10; const x0 = W0 + 12;
+  const line = (t, c = '#e8e8ec', s = 12, b = false) => { o.font = `${b ? 'bold ' : ''}${s}px "Yu Gothic UI","Meiryo",sans-serif`; o.fillStyle = c; o.fillText(t, x0, y); y += s + 6; };
+  for (const [name, rows] of Object.entries(G.tables)) {
+    line(name, '#9aa0ad', 12, true);
+    for (const r of rows) line(`${r.from} → ${r.to}　${fmt(sec(r.knife_sec))} 秒`, '#e8e8ec', 12);
+    y += 4;
+  }
+  return oc.toDataURL('image/png');
+}
+$('#png').onclick = () => { const a = document.createElement('a'); a.href = exportDataURL(); a.download = `${G.map}_${weapon}_移動時間.png`; a.click(); };
+$('#mapSel').onchange = () => load($('#mapSel').value);
+$('#showAll').onchange = render;
+window.__tm = { exportDataURL, setWeapon: w => { weapon = w; render(); }, load, get ready(){ return !!G; } };
+if (q.get('weapon')) weapon = q.get('weapon');
+await load(q.get('map') || IDX.maps[0].map); $('#mapSel').value = G.map;
+})();
+</script>
+</body>
+</html>

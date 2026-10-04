@@ -1,0 +1,82 @@
+[
+ {
+  "map": "supply3",
+  "title": "Aラッシュ（Aロング一点）",
+  "file": "patterns/supply3-01.json"
+ },
+ {
+  "map": "supply3",
+  "title": "Bラッシュ（Bロング→階段）",
+  "file": "patterns/supply3-02.json"
+ },
+ {
+  "map": "supply3",
+  "title": "スプリット（A本命・センター圧）",
+  "file": "patterns/supply3-03.json"
+ },
+ {
+  "map": "supply3",
+  "title": "デフォルト（情報取り→遅攻B）",
+  "file": "patterns/supply3-04.json"
+ },
+ {
+  "map": "provence",
+  "title": "Aラッシュ（Aロング）",
+  "file": "patterns/provence-01.json"
+ },
+ {
+  "map": "provence",
+  "title": "Bラッシュ（Bロング＋S字）",
+  "file": "patterns/provence-02.json"
+ },
+ {
+  "map": "provence",
+  "title": "スプリット（Aロング＋A連通）",
+  "file": "patterns/provence-03.json"
+ },
+ {
+  "map": "provence",
+  "title": "デフォルト（センター確保→様子見）",
+  "file": "patterns/provence-04.json"
+ },
+ {
+  "map": "crossport",
+  "title": "Aラッシュ（Aロン＋ダクト）",
+  "file": "patterns/crossport-01.json"
+ },
+ {
+  "map": "crossport",
+  "title": "Bラッシュ（Bロング）",
+  "file": "patterns/crossport-02.json"
+ },
+ {
+  "map": "crossport",
+  "title": "スプリット（ダクトA＋ロングB陽動）",
+  "file": "patterns/crossport-03.json"
+ },
+ {
+  "map": "crossport",
+  "title": "デフォルト（情報取り→遅攻）",
+  "file": "patterns/crossport-04.json"
+ },
+ {
+  "map": "dragonroad",
+  "title": "Aラッシュ（ピンク→屋台）",
+  "file": "patterns/dragonroad-01.json"
+ },
+ {
+  "map": "dragonroad",
+  "title": "Bラッシュ（テロ階段→Bロング）",
+  "file": "patterns/dragonroad-02.json"
+ },
+ {
+  "map": "dragonroad",
+  "title": "スプリット（A本命・橋で分断）",
+  "file": "patterns/dragonroad-03.json"
+ },
+ {
+  "map": "dragonroad",
+  "title": "デフォルト（情報取り→遅攻B）",
+  "file": "patterns/dragonroad-04.json"
+ }
+]

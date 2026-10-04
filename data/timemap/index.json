@@ -1,0 +1,52 @@
+{
+ "maps": [
+  {
+   "map": "supply3",
+   "name": "第3補給倉庫",
+   "calibrated": true
+  },
+  {
+   "map": "provence",
+   "name": "プロバンス",
+   "calibrated": false
+  },
+  {
+   "map": "crossport",
+   "name": "クロスポート",
+   "calibrated": false
+  },
+  {
+   "map": "dragonroad",
+   "name": "ドラゴンロード",
+   "calibrated": false
+  }
+ ],
+ "weapons": [
+  {
+   "id": "knife",
+   "label": "ナイフ",
+   "factor": 1.0
+  },
+  {
+   "id": "p90",
+   "label": "P90",
+   "factor": 1.0111482720178373
+  },
+  {
+   "id": "scar",
+   "label": "SCAR / AK-47",
+   "factor": 1.052396878483835
+  },
+  {
+   "id": "m249",
+   "label": "M249",
+   "factor": 1.354515050167224
+  },
+  {
+   "id": "walk",
+   "label": "歩き(Shift)",
+   "factor": 1.5016722408026755
+  }
+ ],
+ "knife_sec_course": 8.97
+}
