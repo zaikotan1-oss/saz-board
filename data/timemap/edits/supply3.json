@@ -1,4 +1,5 @@
 {
+ "map": "supply3",
  "nodes": {
   "Bロング": [
    218,
@@ -44,6 +45,7 @@
   "CT階段": "def"
  },
  "px_per_knife_sec": 28.69,
+ "calib": null,
  "ref": null,
  "edges": [
   {

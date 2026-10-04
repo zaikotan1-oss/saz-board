@@ -112,8 +112,8 @@ function mapById(id){ return DB.maps.find(m => m.id === id) || DB.maps[0]; }
 
 // ---------- 読み込み ----------
 async function init(){
-  DB = await (await fetch('maps/maps.json')).json();
-  try { presets = await (await fetch('patterns/index.json')).json(); } catch(e){ presets = []; }
+  DB = await (await fetch('maps/maps.json?t=' + Date.now())).json();
+  try { presets = await (await fetch('patterns/index.json?t=' + Date.now())).json(); } catch(e){ presets = []; }
   for (const m of DB.maps) { const o = document.createElement('option'); o.value = m.id; o.textContent = m.name; $('#mapSel').appendChild(o); }
   for (const r of DB.roles) { const o = document.createElement('option'); o.value = r; o.textContent = r; $('#roleSel').appendChild(o); }
   const q = new URLSearchParams(location.search);
@@ -126,7 +126,7 @@ async function init(){
   if (q.get('export')) document.body.classList.add('export');
   refreshPatSel();
   try {
-    const W = await (await fetch('data/weapons.json')).json();
+    const W = await (await fetch('data/weapons.json?t=' + Date.now())).json();
     const base = W.weapons.find(w => w.name === W.base).mobility;
     $('#mobTbl').innerHTML = '<tr style="color:#9aa0ad"><td>武器</td><td>機動力</td><td>実測 秒</td><td>速さ(ナイフ=1)</td></tr>' +
       W.weapons.map(w => `<tr style="${w.focus ? 'color:#f2b705;font-weight:bold' : ''}"><td>${w.name}</td><td>${w.mobility ?? '?'}</td><td>${w.measured_sec ?? ''}</td><td>${w.measured_speed_vs_knife ?? ''}</td></tr>`).join('') +

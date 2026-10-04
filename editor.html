@@ -65,8 +65,8 @@
 (async () => {
 const $ = s => document.querySelector(s);
 const cv = $('#cv'), ctx = cv.getContext('2d');
-const IDX = await (await fetch('data/timemap/index.json')).json();
-const DB = await (await fetch('maps/maps.json')).json();
+const IDX = await (await fetch('data/timemap/index.json?t=' + Date.now())).json();
+const DB = await (await fetch('maps/maps.json?t=' + Date.now())).json();
 const SAVE = 'http://127.0.0.1:8843';
 const LS_BG = 'saz-board-bg-'; // 作戦ボード（index.html）と同じ記憶場所。片方でドロップした下地はもう片方でも使える
 const loadImg = src => new Promise((ok, ng) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ng; i.src = src; });
