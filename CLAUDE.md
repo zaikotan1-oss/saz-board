@@ -4,7 +4,7 @@
 HTML 1 枚（`index.html`）。見本パターンは生成スクリプトから作る。
 
 ## 入口
-- 画面: `python -m http.server 8840 --directory C:/Users/zaiko/saz-board` → http://localhost:8840 （launch.json の `saz-board`）
+- 画面: `（このフォルダで）python -m http.server 8840` → http://localhost:8840 （launch.json の `saz-board`）
 - 作業の記録・残件: `context/README.md`
 - 利用者向けの使い方は画面右の「道具」の下に書いてある
 
