@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""移動時間マップを マップ×武器 ごとに PNG にする → data/timemap/png/
+"""移動時間（editor.html）を マップ×武器 ごとに PNG にする → data/timemap/png/　※点が無いマップは飛ばす
 使い方: python tools/export_timemap.py [map_id]"""
 import base64, json, os, sys, threading, io
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
@@ -17,10 +17,11 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(); pg = br.new_page(viewport={'width': 1500, 'height': 900})
     for m in idx['maps']:
         if only and m['map'] != only: continue
+        if not os.path.exists(os.path.join(ROOT, 'data', 'timemap', 'edits', m['map'] + '.json')): continue
         for w in idx['weapons']:
-            pg.goto(f"http://127.0.0.1:{PORT}/timemap.html?map={m['map']}&weapon={w['id']}")
-            pg.wait_for_function('window.__tm && window.__tm.ready'); pg.wait_for_timeout(400)
-            data = pg.evaluate('window.__tm.exportDataURL(2)')
+            pg.goto(f"http://127.0.0.1:{PORT}/editor.html?map={m['map']}&weapon={w['id']}")
+            pg.wait_for_function('window.__ed && window.__ed.ready'); pg.wait_for_timeout(400)
+            data = pg.evaluate('window.__ed.exportDataURL(2)')
             name = f"{m['map']}_{w['id']}_{m['name']}_{w['label'].replace('/', '／').replace(' ', '')}.png"
             open(os.path.join(out, name), 'wb').write(base64.b64decode(data.split(',', 1)[1])); print('wrote', name)
     br.close()

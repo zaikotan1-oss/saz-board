@@ -15,6 +15,8 @@ HTML 1 枚（`index.html`）。見本パターンは生成スクリプトから�
 | `maps/maps.json` | マップ一覧（id・名前・画像・リスポ・サイト・地名の座標・`labelsInImage`）と役割一覧 |
 | `maps/*.jpg,png` | 下地の俯瞰図（原作サドンアタックの 2012 年ブログ画像。`maps/raw/` に元と出所） |
 | `tools/make_patterns.py` | 見本パターン（16 本）を地名から生成 → `patterns/*.json` と `patterns/index.json` |
+| `editor.html` | 移動時間エディター（点・通路・縮尺・武器切替・全地点間の表・PNG）。保存は `tools/save_server.py`（8843、常駐）→ `data/timemap/edits/<map>.json`。Pages では JSON ファイルで受け渡し |
+| `tools/timemap_build.py` / `tools/export_timemap.py` | edits から表を再計算 → `data/timemap/<map>.json`、editor.html を使って武器別 PNG → `data/timemap/png/` |
 | `tools/export_png.py` | 見本を全部 PNG に（Playwright のヘッドレス Chromium、8841 を一時的に使う） → `patterns/png/` |
 
 ## 決まり

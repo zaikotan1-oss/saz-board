@@ -2,57 +2,59 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>地点と通路の編集</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAZ 移動時間エディター</title>
 <style>
   :root { --bg:#1b1d22; --panel:#262930; --line:#3a3e48; --text:#e8e8ec; --sub:#9aa0ad; --acc:#f2b705; --atk:#e03b3b; --def:#2f7de1; }
   body { margin:0; background:var(--bg); color:var(--text); font-family:"Yu Gothic UI","Meiryo",sans-serif; font-size:14px; }
-  header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--line); }
-  select, button { background:#30343d; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:6px 10px; font-size:14px; cursor:pointer; }
+  header { display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--line); }
+  header .grp { display:flex; gap:4px; align-items:center; padding:2px 6px; border:1px solid var(--line); border-radius:8px; }
+  header .grp span.t { color:var(--sub); font-size:11px; margin-right:2px; }
+  select, button { background:#30343d; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:5px 9px; font-size:13px; cursor:pointer; }
   button.on { background:var(--acc); color:#000; font-weight:bold; border-color:var(--acc); }
   button.save { background:#2a7a3a; font-weight:bold; } button.danger { background:#5a2a2a; }
-  button.atk { border-color:var(--atk); } button.def { border-color:var(--def); }
-  #msg { color:var(--acc); font-weight:bold; font-size:15px; min-width:240px; }
-  main { display:grid; grid-template-columns:1fr 360px; }
+  button.atk { border-color:var(--atk); } button.def { border-color:var(--def); } button.cal { border-color:#2fd17a; }
+  #msg { color:var(--acc); font-weight:bold; font-size:14px; flex-basis:100%; }
+  main { display:grid; grid-template-columns:1fr 400px; }
   #stage { padding:10px; background:#111; display:flex; justify-content:center; align-items:flex-start; }
   canvas { max-width:100%; height:auto; cursor:crosshair; border:1px solid var(--line); touch-action:none; }
-  aside { background:var(--panel); border-left:1px solid var(--line); padding:10px; max-height:calc(100vh - 56px); overflow:auto; }
-  aside h2 { font-size:13px; color:var(--sub); margin:8px 0 4px; border-bottom:1px solid var(--line); }
-  table { width:100%; border-collapse:collapse; font-size:12.5px; }
-  td { padding:3px 4px; border-bottom:1px solid #30343d; white-space:nowrap; } td.n { text-align:right; color:var(--acc); font-weight:bold; }
+  aside { background:var(--panel); border-left:1px solid var(--line); padding:10px; max-height:calc(100vh - 100px); overflow:auto; }
+  aside h2 { font-size:13px; color:var(--sub); margin:10px 0 4px; border-bottom:1px solid var(--line); }
+  table { border-collapse:collapse; font-size:12.5px; } td { padding:3px 4px; border-bottom:1px solid #30343d; white-space:nowrap; } td.n { text-align:right; color:var(--acc); font-weight:bold; }
   tr.sel td { background:#5a4a10; } tr.ref td { outline:1px solid #2fd17a; }
   .x { color:#ff7b7b; font-weight:bold; padding:0 6px; cursor:pointer; border:1px solid #6a3a3a; border-radius:4px; background:#2a1a1a; } .x:hover { background:#7a2a2a; color:#fff; }
   .rf { color:#2fd17a; padding:0 6px; cursor:pointer; border:1px solid #2a5a3a; border-radius:4px; background:#1a2a1a; } .rf:hover { background:#2a7a3a; color:#fff; }
   .hint { color:var(--sub); font-size:12px; line-height:1.6; }
+  .mat td { font-size:11px; padding:2px 3px; } .mat td.h { color:var(--sub); font-size:10px; max-width:70px; overflow:hidden; text-overflow:ellipsis; }
+  .mat td.a { color:#ff9a9a; } .mat td.d { color:#8fbaff; }
+  @media (max-width:900px){ main{ grid-template-columns:1fr; } aside{ max-height:none; border-left:none; } }
 </style>
 </head>
 <body>
 <header>
   <select id="mapSel"></select>
-  <button data-mode="move" class="on">動かす</button>
-  <button data-mode="atk" class="atk">赤の点を置く</button>
-  <button data-mode="def" class="def">青の点を置く</button>
-  <button data-mode="add">通路を引く</button>
-  <button data-mode="bend">曲げ点を足す</button>
-  <button data-mode="del" class="danger">消す</button>
-  <select id="wsel"></select>
-  <button id="save" class="save">保存（私に送る）</button>
+  <div class="grp"><span class="t">置く</span><button data-mode="atk" class="atk">赤の点</button><button data-mode="def" class="def">青の点</button></div>
+  <div class="grp"><span class="t">通路</span><button data-mode="add">引く</button><button data-mode="bend">曲げ点</button></div>
+  <div class="grp"><button data-mode="move" class="on">動かす</button><button data-mode="del" class="danger">消す</button></div>
+  <div class="grp"><span class="t">縮尺</span><button data-mode="calib" class="cal">コースを打つ</button><span id="calinfo" class="t"></span></div>
+  <div class="grp"><span class="t">秒数</span><select id="wsel"></select><label class="t"><input type="checkbox" id="showSec" checked> 線に秒数</label></div>
+  <div class="grp"><button id="save" class="save">保存</button><button id="dl">JSONファイル</button><button id="ul">JSON読む</button><input type="file" id="ulf" accept=".json" hidden></div>
+  <div class="grp"><button id="png">PNG（この武器）</button><button id="pngall">PNG（全武器）</button></div>
   <button id="clear" class="danger">全部消す</button>
-  <button id="dl">JSONを保存(ファイル)</button>
-  <button id="ul">JSONを読む</button><input type="file" id="ulf" accept=".json" hidden>
   <span id="msg"></span>
 </header>
 <main>
   <div id="stage"><canvas id="cv"></canvas></div>
   <aside>
     <div class="hint">
-      <b>赤/青の点を置く</b>: 地図をクリック → 名前を入れる。<br>
-      <b>通路を引く</b>: 点を2つ順にクリック。<br>
-      <b>曲げ点を足す</b>: 通路を選んで（線か右の表をクリック）、通る所を順にクリック。<br>
-      <b>動かす</b>: 点や曲げ点をドラッグ。<b>消す</b>: 曲げ点・通路・点をクリック。<br>
-      右の表の <span class="rf">基準</span> を押すと、その通路を 1.00 として他の比率が出ます。
+      <b>赤/青の点</b>: 地図をクリック → 名前。<b>引く</b>: 点を2つ順にクリック。<b>曲げ点</b>: 通路を選んで通る所を順にクリック。<br>
+      <b>縮尺</b>: 実際に走ったコースの始点と終点をクリック → 何秒かかったか（ナイフ走り）を入れる。<br>
+      <b>基準</b>: 表の「基準」を押した通路が 1.00 になり、他はその何倍かが出る。
     </div>
-    <h2>通路（距離・秒・比率）</h2>
+    <h2>通路（px・秒・比率）</h2>
     <table id="elist"></table>
+    <h2>全地点間の移動時間（最短路）</h2>
+    <div id="mat"></div>
     <h2>地点</h2>
     <table id="nlist"></table>
   </aside>
@@ -60,56 +62,76 @@
 <script>
 (async () => {
 const $ = s => document.querySelector(s);
-const cv = $('#cv'), ctx = ctx0 = $('#cv').getContext('2d');
+const cv = $('#cv'), ctx = cv.getContext('2d');
 const IDX = await (await fetch('data/timemap/index.json')).json();
 const DB = await (await fetch('maps/maps.json')).json();
 const SAVE = 'http://127.0.0.1:8843';
-let G = null, img = null, mode = 'move', selEdge = null, refEdge = null, drag = null, addFrom = null, weapon = IDX.weapons[0].id;
-let PXS = 28.7;  // px / ナイフ秒（第3補給倉庫の実測）
+const DEFAULT_PXS = 28.7; // 第3補給倉庫の実測（Bロング 257px = ナイフ 8.97 秒）
+let G = null, img = null, mode = 'move', selEdge = null, refEdge = null, drag = null, addFrom = null, weapon = 'p90', calPts = [], serverOK = false;
 for (const m of IDX.maps) { const o = document.createElement('option'); o.value = m.map; o.textContent = m.name; $('#mapSel').appendChild(o); }
-for (const w of IDX.weapons) { const o = document.createElement('option'); o.value = w.id; o.textContent = '秒数: ' + w.label; $('#wsel').appendChild(o); }
-$('#wsel').onchange = () => { weapon = $('#wsel').value; render(); };
-const factor = () => IDX.weapons.find(w => w.id === weapon).factor;
+for (const w of IDX.weapons) { const o = document.createElement('option'); o.value = w.id; o.textContent = w.label; $('#wsel').appendChild(o); }
+$('#wsel').value = weapon; $('#wsel').onchange = () => { weapon = $('#wsel').value; render(); };
+$('#showSec').onchange = () => render();
+const WPN = () => IDX.weapons.find(w => w.id === weapon);
+const factor = () => WPN().factor;
 function msg(t){ $('#msg').textContent = t; }
+const mapName = () => DB.maps.find(x => x.id === G.map).name;
 
+function fromSaved(e){ G.nodes = e.nodes || {}; G.team = e.team || {}; G.edges = (e.edges || []).map(x => ({ a: x.a, b: x.b, via: x.pts.slice(1, -1) })); G.pxs = e.px_per_knife_sec || null; G.calib = e.calib || null; refEdge = e.ref ? G.edges.find(x => x.a === e.ref.a && x.b === e.ref.b) || null : null; }
 async function load(id){
-  const base = await (await fetch(`data/timemap/${id}.json?t=${Date.now()}`)).json();
-  PXS = base.px_per_knife_sec || PXS;
-  G = { map: id, nodes: {}, team: {}, edges: [] };
-  try { const r = await fetch(`${SAVE}/load?map=${id}`); if (r.ok) { const e = await r.json(); if (e.nodes) { G.nodes = e.nodes; G.team = e.team || {}; G.edges = (e.edges || []).map(x => ({ a: x.a, b: x.b, via: x.pts.slice(1, -1) })); if (e.ref) refEdge = G.edges.find(x => x.a === e.ref.a && x.b === e.ref.b) || null; msg('保存済みを読み込みました'); } else msg('まだ何も置いていません。赤/青の点を置いてください'); } } catch(err) { const e = await loadEditsFallback(id); if (e && e.nodes) { G.nodes = e.nodes; G.team = e.team || {}; G.edges = (e.edges || []).map(x => ({ a: x.a, b: x.b, via: x.pts.slice(1, -1) })); } msg('保存サーバー無し: 「JSONを保存(ファイル)」で保存してください'); }
+  G = { map: id, nodes: {}, team: {}, edges: [], pxs: null, calib: null }; selEdge = null; refEdge = null; calPts = [];
+  let got = false;
+  try { const r = await fetch(`${SAVE}/load?map=${id}`); serverOK = true; if (r.ok) { fromSaved(await r.json()); got = true; } } catch(err) { serverOK = false; }
+  if (!got) { try { const r = await fetch(`data/timemap/edits/${id}.json?t=${Date.now()}`); if (r.ok) { fromSaved(await r.json()); got = true; } } catch(e) {} }
   const m = DB.maps.find(x => x.id === id);
   img = await new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.src = m.image; });
-  cv.width = img.width; cv.height = img.height; selEdge = null; render();
+  cv.width = img.width; cv.height = img.height;
+  msg((got ? '保存済みを読み込みました。' : 'まだ何も置いていません。') + (serverOK ? '' : '（保存サーバー無し: 「JSONファイル」で保存）'));
+  render();
 }
 const pts = e => [G.nodes[e.a], ...e.via, G.nodes[e.b]];
 const plen = P => P.reduce((s, p, i) => i ? s + Math.hypot(p[0]-P[i-1][0], p[1]-P[i-1][1]) : 0, 0);
-const sec = px => px / PXS * factor();
-function strokeText(t, x, y, size, color, align='center'){ ctx.font = `bold ${size}px "Yu Gothic UI","Meiryo",sans-serif`; ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.lineJoin = 'round'; ctx.strokeText(t, x, y); ctx.fillStyle = color; ctx.fillText(t, x, y); }
+const PXS = () => G.pxs || DEFAULT_PXS;
+const sec = px => px / PXS() * factor();
+const fmt = s => s.toFixed(1);
+function strokeText(c, t, x, y, size, color, align='center'){ c.font = `bold ${size}px "Yu Gothic UI","Meiryo",sans-serif`; c.textAlign = align; c.textBaseline = 'middle'; c.lineWidth = 3; c.strokeStyle = 'rgba(0,0,0,.85)'; c.lineJoin = 'round'; c.strokeText(t, x, y); c.fillStyle = color; c.fillText(t, x, y); }
 function midpoint(P){ const L = plen(P); let h = L/2; for (let i = 0; i < P.length-1; i++) { const d = Math.hypot(P[i+1][0]-P[i][0], P[i+1][1]-P[i][1]); if (h <= d) { const t = d ? h/d : 0; return [P[i][0] + (P[i+1][0]-P[i][0])*t, P[i][1] + (P[i+1][1]-P[i][1])*t]; } h -= d; } return P[0]; }
-function render(){
-  ctx.drawImage(img, 0, 0); ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(0,0,cv.width,cv.height);
-  for (const e of G.edges) {
-    const P = pts(e); ctx.strokeStyle = e === selEdge ? '#f2b705' : e === refEdge ? '#2fd17a' : 'rgba(255,255,255,.9)'; ctx.lineWidth = e === selEdge ? 5 : 3;
-    ctx.beginPath(); P.forEach((p, j) => j ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke();
-    for (const v of e.via) { ctx.fillStyle = e === selEdge ? '#f2b705' : '#ddd'; ctx.fillRect(v[0]-5, v[1]-5, 10, 10); }
-    const m = midpoint(P), L = plen(P); const t = `${sec(L).toFixed(1)}s` + (refEdge && refEdge !== e ? ` ×${(L / plen(pts(refEdge))).toFixed(2)}` : '');
-    ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.beginPath(); ctx.roundRect(m[0] - 34, m[1] - 10, 68, 20, 5); ctx.fill(); strokeText(t, m[0], m[1], 12, '#fff');
-  }
-  for (const [n, p] of Object.entries(G.nodes)) {
-    const c = G.team[n] === 'def' ? '#2f7de1' : '#e03b3b';
-    ctx.fillStyle = c; ctx.strokeStyle = addFrom === n ? '#f2b705' : '#fff'; ctx.lineWidth = addFrom === n ? 4 : 2;
-    ctx.beginPath(); ctx.arc(p[0], p[1], 11, 0, Math.PI*2); ctx.fill(); ctx.stroke(); strokeText(n, p[0], p[1] - 19, 13, '#fff');
-  }
-  // 表
+
+// 最短路（全地点）
+function allPairs(){
+  const names = Object.keys(G.nodes); const adj = {};
+  for (const e of G.edges) { const L = plen(pts(e)); (adj[e.a] ||= []).push([e.b, L]); (adj[e.b] ||= []).push([e.a, L]); }
+  const M = {};
+  for (const s of names) { const dist = { [s]: 0 }; const Q = [[0, s]]; while (Q.length) { Q.sort((a, b) => a[0]-b[0]); const [d, u] = Q.shift(); if (d > dist[u]) continue; for (const [v, w] of adj[u] || []) { if (d + w < (dist[v] ?? Infinity)) { dist[v] = d + w; Q.push([d + w, v]); } } } M[s] = dist; }
+  return { names, M };
+}
+function drawMap(c){
+  c.drawImage(img, 0, 0); c.fillStyle = 'rgba(0,0,0,.2)'; c.fillRect(0,0,cv.width,cv.height);
+  if (G.calib) { c.setLineDash([8, 6]); c.strokeStyle = '#2fd17a'; c.lineWidth = 3; c.beginPath(); c.moveTo(...G.calib.start); c.lineTo(...G.calib.goal); c.stroke(); c.setLineDash([]); strokeText(c, `縮尺コース ${G.calib.sec}s`, (G.calib.start[0]+G.calib.goal[0])/2, (G.calib.start[1]+G.calib.goal[1])/2 - 14, 11, '#2fd17a'); }
+  calPts.forEach(p => { c.fillStyle = '#2fd17a'; c.beginPath(); c.arc(p[0], p[1], 8, 0, Math.PI*2); c.fill(); });
   const refL = refEdge ? plen(pts(refEdge)) : null;
-  $('#elist').innerHTML = '<tr style="color:#9aa0ad"><td>通路</td><td>px</td><td>秒</td><td>比率</td><td></td><td></td></tr>' + G.edges.map((e, i) => { const L = plen(pts(e)); return `<tr data-i="${i}" class="${e === selEdge ? 'sel' : ''} ${e === refEdge ? 'ref' : ''}"><td>${e.a} ― ${e.b}</td><td class="n">${L.toFixed(0)}</td><td class="n">${sec(L).toFixed(1)}</td><td class="n">${refL ? (L/refL).toFixed(2) : ''}</td><td><span class="rf" data-ref="${i}">基準</span></td><td><span class="x" data-del="${i}">×</span></td></tr>`; }).join('');
+  for (const e of G.edges) {
+    const P = pts(e); c.strokeStyle = e === selEdge ? '#f2b705' : e === refEdge ? '#2fd17a' : 'rgba(255,255,255,.9)'; c.lineWidth = e === selEdge ? 5 : 3;
+    c.beginPath(); P.forEach((p, j) => j ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])); c.stroke();
+    for (const v of e.via) { c.fillStyle = e === selEdge ? '#f2b705' : '#ddd'; c.fillRect(v[0]-5, v[1]-5, 10, 10); }
+    if ($('#showSec').checked) { const m = midpoint(P), L = plen(P); const t = `${fmt(sec(L))}s` + (refL && refEdge !== e ? ` ×${(L/refL).toFixed(2)}` : ''); c.fillStyle = 'rgba(0,0,0,.7)'; c.beginPath(); c.roundRect(m[0] - 34, m[1] - 10, 68, 20, 5); c.fill(); strokeText(c, t, m[0], m[1], 12, '#fff'); }
+  }
+  for (const [n, p] of Object.entries(G.nodes)) { const col = G.team[n] === 'def' ? '#2f7de1' : '#e03b3b'; c.fillStyle = col; c.strokeStyle = addFrom === n ? '#f2b705' : '#fff'; c.lineWidth = addFrom === n ? 4 : 2; c.beginPath(); c.arc(p[0], p[1], 11, 0, Math.PI*2); c.fill(); c.stroke(); strokeText(c, n, p[0], p[1] - 19, 13, '#fff'); }
+  c.fillStyle = 'rgba(0,0,0,.6)'; c.fillRect(0, cv.height - 30, 520, 30);
+  let x = 12, y = cv.height - 15; for (const [col, t] of [['#e03b3b', '攻め'], ['#2f7de1', '守り']]) { c.fillStyle = col; c.beginPath(); c.arc(x + 7, y, 7, 0, Math.PI*2); c.fill(); strokeText(c, t, x + 18, y, 12, '#fff', 'left'); x += 60; }
+  strokeText(c, `秒数 = ${WPN().label} で走った時間${G.pxs ? '' : '（縮尺は第3補給倉庫の値を仮に流用）'}`, x + 6, y, 12, '#f2b705', 'left');
+}
+function render(){
+  drawMap(ctx);
+  $('#calinfo').textContent = G.pxs ? `実測 ${PXS().toFixed(1)}px/秒` : '未設定（仮）';
+  const refL = refEdge ? plen(pts(refEdge)) : null;
+  $('#elist').innerHTML = '<tr style="color:#9aa0ad"><td>通路</td><td>px</td><td>秒</td><td>比率</td><td></td><td></td></tr>' + G.edges.map((e, i) => { const L = plen(pts(e)); return `<tr data-i="${i}" class="${e === selEdge ? 'sel' : ''} ${e === refEdge ? 'ref' : ''}"><td>${e.a} ― ${e.b}</td><td class="n">${L.toFixed(0)}</td><td class="n">${fmt(sec(L))}</td><td class="n">${refL ? (L/refL).toFixed(2) : ''}</td><td><span class="rf" data-ref="${i}">基準</span></td><td><span class="x" data-del="${i}">×</span></td></tr>`; }).join('');
+  const { names, M } = allPairs();
+  const cls = n => G.team[n] === 'def' ? 'd' : 'a';
+  $('#mat').innerHTML = names.length < 2 ? '<div class="hint">点が 2 つ以上あると出ます</div>' : '<table class="mat"><tr><td></td>' + names.map(n => `<td class="h ${cls(n)}" title="${n}">${n}</td>`).join('') + '</tr>' + names.map(a => `<tr><td class="h ${cls(a)}">${a}</td>` + names.map(b => `<td class="n">${a === b ? '-' : (M[a][b] == null ? '―' : fmt(sec(M[a][b])))}</td>`).join('') + '</tr>').join('') + '</table>';
   $('#nlist').innerHTML = Object.keys(G.nodes).map(n => `<tr><td><span style="color:${G.team[n] === 'def' ? '#7fb3ff' : '#ff9a9a'}">●</span> ${n}</td><td class="n">${G.nodes[n][0]},${G.nodes[n][1]}</td><td><span class="x" data-ndel="${n}">×</span></td></tr>`).join('');
 }
-$('#elist').addEventListener('click', ev => {
-  const t = ev.target; if (t.dataset.ref !== undefined) { refEdge = G.edges[+t.dataset.ref]; render(); return; }
-  if (t.dataset.del !== undefined) { const e = G.edges[+t.dataset.del]; G.edges = G.edges.filter(x => x !== e); if (selEdge === e) selEdge = null; if (refEdge === e) refEdge = null; render(); return; }
-  const tr = t.closest('tr[data-i]'); if (tr) { selEdge = G.edges[+tr.dataset.i]; render(); }
-});
+$('#elist').addEventListener('click', ev => { const t = ev.target; if (t.dataset.ref !== undefined) { refEdge = G.edges[+t.dataset.ref]; render(); return; } if (t.dataset.del !== undefined) { const e = G.edges[+t.dataset.del]; G.edges = G.edges.filter(x => x !== e); if (selEdge === e) selEdge = null; if (refEdge === e) refEdge = null; render(); return; } const tr = t.closest('tr[data-i]'); if (tr) { selEdge = G.edges[+tr.dataset.i]; render(); } });
 $('#nlist').addEventListener('click', ev => { const n = ev.target.dataset.ndel; if (n === undefined) return; if (!confirm(`地点「${n}」と、つながる通路を消しますか？`)) return; delete G.nodes[n]; delete G.team[n]; G.edges = G.edges.filter(e => e.a !== n && e.b !== n); selEdge = refEdge = null; render(); });
 
 function pos(ev){ const r = cv.getBoundingClientRect(); return [ (ev.clientX - r.left) * cv.width / r.width, (ev.clientY - r.top) * cv.height / r.height ]; }
@@ -118,34 +140,60 @@ function hitVia(p){ for (const e of G.edges) for (const v of e.via) if (Math.abs
 function distSeg(p, a, b){ const dx=b[0]-a[0], dy=b[1]-a[1]; const t = Math.max(0, Math.min(1, ((p[0]-a[0])*dx + (p[1]-a[1])*dy) / (dx*dx+dy*dy || 1))); return Math.hypot(p[0]-(a[0]+t*dx), p[1]-(a[1]+t*dy)); }
 function hitEdge(p){ let best = null, bd = 10; for (const e of G.edges) { const P = pts(e); for (let i = 0; i < P.length-1; i++) { const d = distSeg(p, P[i], P[i+1]); if (d < bd) { bd = d; best = { e, seg: i }; } } } return best; }
 cv.addEventListener('pointerdown', ev => {
-  const p = pos(ev); cv.setPointerCapture(ev.pointerId);
-  if (mode === 'atk' || mode === 'def') { const name = prompt(mode === 'atk' ? '赤の点の名前' : '青の点の名前', ''); if (!name) return; if (G.nodes[name]) { alert('同じ名前があります'); return; } G.nodes[name] = [Math.round(p[0]), Math.round(p[1])]; G.team[name] = mode; render(); return; }
+  const p = pos(ev); cv.setPointerCapture(ev.pointerId); const rp = [Math.round(p[0]), Math.round(p[1])];
+  if (mode === 'calib') { calPts.push(rp); render(); if (calPts.length === 1) { msg('次に、走り終わった所（壁）をクリック'); return; }
+    const s = prompt('このコースにかかった秒数（ナイフ走り）', G.calib ? G.calib.sec : '8.97'); const secv = parseFloat(s);
+    if (secv > 0) { G.calib = { start: calPts[0], goal: calPts[1], sec: secv }; G.pxs = Math.hypot(calPts[1][0]-calPts[0][0], calPts[1][1]-calPts[0][1]) / secv; msg(`縮尺を設定: ${G.pxs.toFixed(1)} px/秒。保存で確定`); }
+    calPts = []; setMode('move'); render(); return; }
+  if (mode === 'atk' || mode === 'def') { const name = prompt(mode === 'atk' ? '赤の点の名前' : '青の点の名前', ''); if (!name) return; if (G.nodes[name]) { alert('同じ名前があります'); return; } G.nodes[name] = rp; G.team[name] = mode; render(); return; }
   if (mode === 'move') { const n = hitNode(p); if (n) { drag = { node: n }; return; } const h = hitVia(p); if (h) { drag = { via: h.v }; selEdge = h.e; render(); return; } const he = hitEdge(p); selEdge = he ? he.e : null; render(); return; }
-  if (mode === 'bend') { if (!selEdge) { const he = hitEdge(p); if (he) { selEdge = he.e; render(); msg('通路を選びました。通る所をクリック'); } else msg('先に通路を選んでください'); return; }
-    const P = pts(selEdge); let bi = 0, bd = 1e9; for (let i = 0; i < P.length-1; i++) { const d = distSeg(p, P[i], P[i+1]); if (d < bd) { bd = d; bi = i; } }
-    selEdge.via.splice(bi, 0, [Math.round(p[0]), Math.round(p[1])]); render(); return; }
-  if (mode === 'add') { const n = hitNode(p); if (!n) { msg('点の上をクリックしてください'); return; } if (!addFrom) { addFrom = n; msg(`${n} から… もう1つの点をクリック`); render(); return; } if (n !== addFrom) { const e = { a: addFrom, b: n, via: [] }; G.edges.push(e); selEdge = e; msg(`${addFrom} ― ${n} を引きました。曲げるなら「曲げ点を足す」`); } addFrom = null; render(); return; }
+  if (mode === 'bend') { if (!selEdge) { const he = hitEdge(p); if (he) { selEdge = he.e; render(); msg('通路を選びました。通る所をクリック'); } else msg('先に通路を選んでください'); return; } const P = pts(selEdge); let bi = 0, bd = 1e9; for (let i = 0; i < P.length-1; i++) { const d = distSeg(p, P[i], P[i+1]); if (d < bd) { bd = d; bi = i; } } selEdge.via.splice(bi, 0, rp); render(); return; }
+  if (mode === 'add') { const n = hitNode(p); if (!n) { msg('点の上をクリックしてください'); return; } if (!addFrom) { addFrom = n; msg(`${n} から… もう1つの点をクリック`); render(); return; } if (n !== addFrom) { const e = { a: addFrom, b: n, via: [] }; G.edges.push(e); selEdge = e; msg(`${addFrom} ― ${n} を引きました。曲げるなら「曲げ点」`); } addFrom = null; render(); return; }
   if (mode === 'del') { const h = hitVia(p); if (h) { h.e.via = h.e.via.filter(v => v !== h.v); render(); return; } const n = hitNode(p); if (n) { if (confirm(`地点「${n}」を消しますか？`)) { delete G.nodes[n]; delete G.team[n]; G.edges = G.edges.filter(e => e.a !== n && e.b !== n); render(); } return; } const he = hitEdge(p); if (he && confirm(`通路「${he.e.a} ― ${he.e.b}」を消しますか？`)) { G.edges = G.edges.filter(e => e !== he.e); selEdge = null; render(); } }
 });
 cv.addEventListener('pointermove', ev => { if (!drag) return; const p = pos(ev); if (drag.node) G.nodes[drag.node] = [Math.round(p[0]), Math.round(p[1])]; else { drag.via[0] = Math.round(p[0]); drag.via[1] = Math.round(p[1]); } render(); });
 cv.addEventListener('pointerup', () => drag = null);
-document.addEventListener('keydown', e => { if ((e.key === 'Delete') && selEdge) { G.edges = G.edges.filter(x => x !== selEdge); selEdge = null; render(); } if (e.key === 'Escape') { addFrom = null; selEdge = null; render(); } });
-document.querySelectorAll('header button[data-mode]').forEach(b => b.onclick = () => { mode = b.dataset.mode; addFrom = null; document.querySelectorAll('header button[data-mode]').forEach(x => x.classList.toggle('on', x === b)); msg({move:'点や曲げ点をドラッグ', atk:'地図をクリックして赤の点を置く', def:'地図をクリックして青の点を置く', add:'点を2つ順にクリック', bend:'通路を選んでから、通る所をクリック', del:'曲げ点・通路・点をクリックで消す'}[mode]); });
-$('#clear').onclick = () => { if (confirm('この地図の点と通路を全部消します。よいですか？')) { G.nodes = {}; G.team = {}; G.edges = []; selEdge = refEdge = null; render(); msg('全部消しました。保存を押すと確定'); } };
-$('#save').onclick = async () => {
-  const body = { nodes: G.nodes, team: G.team, px_per_knife_sec: PXS, ref: refEdge ? { a: refEdge.a, b: refEdge.b } : null,
-    edges: G.edges.map(e => { const P = pts(e); return { a: e.a, b: e.b, pts: P, px: Math.round(plen(P)), knife_sec: +(plen(P) / PXS).toFixed(2) }; }) };
-  try { const r = await fetch(`${SAVE}/save?map=${G.map}`, { method: 'POST', body: JSON.stringify(body) }); msg(r.ok ? '保存しました。Claude に「保存した」と伝えてください' : '保存に失敗'); } catch(e) { msg('保存サーバーに繋がりません'); }
-};
-function bodyJson(){ return { map: G.map, nodes: G.nodes, team: G.team, px_per_knife_sec: PXS, ref: refEdge ? { a: refEdge.a, b: refEdge.b } : null,
-    edges: G.edges.map(e => { const P = pts(e); return { a: e.a, b: e.b, pts: P, px: Math.round(plen(P)), knife_sec: +(plen(P) / PXS).toFixed(2) }; }) }; }
-$('#dl').onclick = () => { const a = document.createElement('a'); a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(bodyJson(), null, 1)); a.download = `${G.map}.json`; a.click(); msg('ファイルに保存しました。Claude に渡せば反映できます'); };
+document.addEventListener('keydown', e => { if (e.target.tagName === 'INPUT') return; if (e.key === 'Delete' && selEdge) { G.edges = G.edges.filter(x => x !== selEdge); selEdge = null; render(); } if (e.key === 'Escape') { addFrom = null; selEdge = null; calPts = []; setMode('move'); render(); } });
+function setMode(m){ mode = m; addFrom = null; document.querySelectorAll('header button[data-mode]').forEach(x => x.classList.toggle('on', x.dataset.mode === m)); msg({move:'点や曲げ点をドラッグ', atk:'地図をクリックして赤の点を置く', def:'地図をクリックして青の点を置く', add:'点を2つ順にクリック', bend:'通路を選んでから、通る所をクリック', del:'曲げ点・通路・点をクリックで消す', calib:'走り始めた所をクリック'}[m]); }
+document.querySelectorAll('header button[data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+$('#clear').onclick = () => { if (confirm('この地図の点と通路を全部消します。よいですか？（縮尺は残します）')) { G.nodes = {}; G.team = {}; G.edges = []; selEdge = refEdge = null; render(); msg('全部消しました。保存を押すと確定'); } };
+function bodyJson(){ return { map: G.map, nodes: G.nodes, team: G.team, px_per_knife_sec: G.pxs, calib: G.calib, ref: refEdge ? { a: refEdge.a, b: refEdge.b } : null, edges: G.edges.map(e => { const P = pts(e); return { a: e.a, b: e.b, pts: P, px: Math.round(plen(P)), knife_sec: +(plen(P) / PXS()).toFixed(2) }; }) }; }
+$('#save').onclick = async () => { try { const r = await fetch(`${SAVE}/save?map=${G.map}`, { method: 'POST', body: JSON.stringify(bodyJson()) }); msg(r.ok ? '保存しました。' : '保存に失敗'); } catch(e) { msg('保存サーバー無し: 「JSONファイル」で保存して Claude に渡してください'); } };
+$('#dl').onclick = () => { const a = document.createElement('a'); a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(bodyJson(), null, 1)); a.download = `${G.map}.json`; a.click(); };
 $('#ul').onclick = () => $('#ulf').click();
-$('#ulf').onchange = async ev => { const f = ev.target.files[0]; if (!f) return; const e = JSON.parse(await f.text()); if (e.map && e.map !== G.map) { $('#mapSel').value = e.map; await load(e.map); } G.nodes = e.nodes || {}; G.team = e.team || {}; G.edges = (e.edges || []).map(x => ({ a: x.a, b: x.b, via: x.pts.slice(1, -1) })); refEdge = e.ref ? G.edges.find(x => x.a === e.ref.a && x.b === e.ref.b) || null : null; render(); msg('読み込みました'); ev.target.value = ''; };
-// GitHub Pages など保存サーバーが無い所では、保存済みを data/timemap/edits/ から読む
-async function loadEditsFallback(id){ try { const r = await fetch(`data/timemap/edits/${id}.json?t=${Date.now()}`); if (r.ok) return await r.json(); } catch(e) {} return null; }
+$('#ulf').onchange = async ev => { const f = ev.target.files[0]; if (!f) return; const e = JSON.parse(await f.text()); if (e.map && e.map !== G.map) { $('#mapSel').value = e.map; await load(e.map); } fromSaved(e); render(); msg('読み込みました'); ev.target.value = ''; };
+
+// ---- PNG ----
+function exportDataURL(scale = 2){
+  const { names, M } = allPairs(); const refL = refEdge ? plen(pts(refEdge)) : null;
+  const head = 44, side = 440, W0 = cv.width;
+  const rows = G.edges.length + 2 + Math.max(0, names.length) + 4;
+  const H = Math.max(cv.height, 10 + rows * 18 + 40) + head;
+  const oc = document.createElement('canvas'); oc.width = (W0 + side) * scale; oc.height = H * scale; const o = oc.getContext('2d'); o.scale(scale, scale);
+  o.fillStyle = '#15161a'; o.fillRect(0, 0, W0 + side, H);
+  o.font = 'bold 20px "Yu Gothic UI","Meiryo",sans-serif'; o.fillStyle = '#f2b705'; o.textBaseline = 'middle'; o.textAlign = 'left';
+  o.fillText(`${mapName()}　移動時間　［${WPN().label}］${G.pxs ? '' : '　※縮尺は仮'}`, 12, head/2);
+  const tmp = document.createElement('canvas'); tmp.width = cv.width; tmp.height = cv.height; drawMap(tmp.getContext('2d')); o.drawImage(tmp, 0, head);
+  let y = head + 10; const x0 = W0 + 12;
+  const line = (t, c = '#e8e8ec', s = 12, b = false) => { o.font = `${b ? 'bold ' : ''}${s}px "Yu Gothic UI","Meiryo",sans-serif`; o.fillStyle = c; o.fillText(t, x0, y); y += s + 6; };
+  line('通路ごと（秒' + (refL ? '・基準比' : '') + '）', '#9aa0ad', 12, true);
+  for (const e of G.edges) { const L = plen(pts(e)); line(`${e.a} → ${e.b}　${fmt(sec(L))} 秒` + (refL ? `　×${(L/refL).toFixed(2)}` : '')); }
+  y += 6; line('全地点間（最短路・秒）', '#9aa0ad', 12, true);
+  // 行列は小さい字で
+  const cw = Math.min(60, Math.floor((side - 110) / Math.max(1, names.length)));
+  o.font = '9px "Yu Gothic UI","Meiryo",sans-serif';
+  names.forEach((n, j) => { o.fillStyle = G.team[n] === 'def' ? '#8fbaff' : '#ff9a9a'; o.save(); o.translate(x0 + 100 + j * cw + cw/2, y + 8); o.rotate(-Math.PI/5); o.textAlign = 'left'; o.fillText(n.slice(0, 8), 0, 0); o.restore(); }); y += 30;
+  for (const a of names) { o.textAlign = 'left'; o.font = '10px "Yu Gothic UI","Meiryo",sans-serif'; o.fillStyle = G.team[a] === 'def' ? '#8fbaff' : '#ff9a9a'; o.fillText(a.slice(0, 10), x0, y);
+    names.forEach((b, j) => { o.textAlign = 'center'; o.fillStyle = '#f2b705'; o.fillText(a === b ? '-' : (M[a][b] == null ? '―' : fmt(sec(M[a][b]))), x0 + 100 + j * cw + cw/2, y); }); y += 16; }
+  return oc.toDataURL('image/png');
+}
+const dl = (name, href) => { const a = document.createElement('a'); a.href = href; a.download = name; a.click(); };
+$('#png').onclick = () => dl(`${mapName()}_${WPN().label.replace(/[\/ ]/g, '')}_移動時間.png`, exportDataURL());
+$('#pngall').onclick = async () => { const keep = weapon; for (const w of IDX.weapons) { weapon = w.id; dl(`${mapName()}_${w.label.replace(/[\/ ]/g, '')}_移動時間.png`, exportDataURL()); await new Promise(r => setTimeout(r, 400)); } weapon = keep; render(); };
+window.__ed = { exportDataURL, setWeapon: w => { weapon = w; $('#wsel').value = w; render(); }, load, get ready(){ return !!G && !!img; } };
 $('#mapSel').onchange = () => load($('#mapSel').value);
-await load(IDX.maps[0].map);
+const q = new URLSearchParams(location.search); if (q.get('weapon')) { weapon = q.get('weapon'); $('#wsel').value = weapon; }
+await load(q.get('map') || IDX.maps[0].map); $('#mapSel').value = G.map;
 })();
 </script>
 </body>

@@ -127,6 +127,7 @@ for G in GRAPHS:
         if e.get('attack'): G['attack'] = e['attack']
         if e.get('defend'): G['defend'] = e['defend']
         if e.get('ref'): G['ref'] = e['ref']
+        if e.get('px_per_knife_sec'): G['pxs_override'] = e['px_per_knife_sec']; G['calib'] = e.get('calib')
         G['edited'] = True; print(G['map'], '← 本人の編集を使用', len(G['edges']), '通路')
     else:
         # 本人が置いた物だけを使う方針（2026-10-04）。私の仮の点は出さない
@@ -138,7 +139,7 @@ for G in GRAPHS:
     M = {}; paths = {}
     for s in names:
         dist, prev = dijkstra(G, s)
-        M[s] = {t: (round(dist[t] / px_per_knife_sec, 1) if t in dist else None) for t in names}  # ナイフ秒。つながっていなければ None
+        M[s] = {t: (round(dist[t] / pxs, 1) if t in dist else None) for t in names}  # ナイフ秒。つながっていなければ None
         for t in names:
             if t == s or t not in dist: continue
             p = [t]
@@ -153,7 +154,7 @@ for G in GRAPHS:
         c = [(M[s][t], t) for t in pool if M[s][t] is not None and t != s]
         return {'from': s, 'to': min(c)[1], 'knife_sec': min(c)[0]} if c else None
     G['tables'] = {
-        '通路ごと': [{'from': e['a'], 'to': e['b'], 'knife_sec': round(e['px'] / px_per_knife_sec, 1)} for e in G['edges']],
+        '通路ごと': [{'from': e['a'], 'to': e['b'], 'knife_sec': round(e['px'] / pxs, 1)} for e in G['edges']],
         '攻めポイント間': rows([(s, t) for i, s in enumerate(atk) for t in atk[i + 1:]]),
         '守りポイント間': rows([(s, t) for i, s in enumerate(dfn) for t in dfn[i + 1:]]),
         '攻め→一番近い守り': [r for r in (nearest(s, dfn) for s in atk) if r],
