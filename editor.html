@@ -15,6 +15,20 @@
   button.save { background:#2a7a3a; font-weight:bold; } button.danger { background:#5a2a2a; }
   button.atk { border-color:var(--atk); } button.def { border-color:var(--def); } button.cal { border-color:#2fd17a; }
   #msg { color:var(--acc); font-weight:bold; font-size:14px; flex-basis:100%; }
+  button.help { background:#2d4a7a; font-weight:bold; }
+  #helpBox { position:fixed; inset:0; background:rgba(0,0,0,.72); display:none; align-items:flex-start; justify-content:center; padding:24px 12px; overflow:auto; z-index:50; }
+  #helpBox.show { display:flex; }
+  #help { background:var(--panel); border:1px solid var(--line); border-radius:12px; max-width:860px; width:100%; padding:18px 24px 24px; line-height:1.75; font-size:15px; }
+  #help h1 { font-size:20px; color:var(--acc); margin:0 0 6px; }
+  #help h2 { font-size:16px; color:var(--acc); border-left:4px solid var(--acc); padding-left:8px; margin:20px 0 6px; }
+  #help ol, #help ul { margin:4px 0 4px 22px; padding:0; }
+  #help li { margin:4px 0; }
+  #help kbd, #help .b { display:inline-block; background:#30343d; border:1px solid var(--line); border-radius:5px; padding:0 7px; font-size:13px; margin:0 2px; }
+  #help .b.atk { border-color:var(--atk); } #help .b.def { border-color:var(--def); } #help .b.cal { border-color:#2fd17a; } #help .b.save { background:#2a7a3a; } #help .b.danger { background:#5a2a2a; }
+  #help .red { color:#ff8a8a; font-weight:bold; } #help .blue { color:#8fbaff; font-weight:bold; }
+  #help .tip { background:#1b1d22; border:1px dashed var(--line); border-radius:8px; padding:8px 12px; margin:8px 0; color:var(--sub); font-size:14px; }
+  #help .close { float:right; }
+  #help pre { background:#1b1d22; border-radius:8px; padding:10px 12px; font-size:13px; line-height:1.5; overflow:auto; }
   main { display:grid; grid-template-columns:1fr 400px; }
   #stage { padding:10px; background:#111; display:flex; justify-content:center; align-items:flex-start; }
   canvas { max-width:100%; height:auto; cursor:crosshair; border:1px solid var(--line); touch-action:none; }
@@ -43,8 +57,86 @@
   <div class="grp"><button id="png">PNG（この武器）</button><button id="pngall">PNG（全武器）</button></div>
   <div class="grp"><span class="t">下地</span><button id="bg" title="ゲーム内の全体図のスクショを下地にする（ドロップでも可）">画像を選ぶ</button><button id="bgReset" title="元の俯瞰図（無ければ格子）に戻す">戻す</button><input type="file" id="bgf" accept="image/*" hidden></div>
   <button id="clear" class="danger">全部消す</button>
+  <button id="helpBtn" class="help">？ 説明</button>
   <span id="msg"></span>
 </header>
+<div id="helpBox">
+ <div id="help">
+  <button class="close" id="helpClose">閉じる ✕</button>
+  <h1>この画面でできること</h1>
+  <p>サドンアタックのマップに「点」を置いて「通路」でつなぐと、<b>点から点まで走って何秒かかるか</b>が武器ごとに出ます。
+  <span class="red">赤の点＝攻めが立つ場所</span>、<span class="blue">青の点＝守りが立つ場所</span>です。
+  表を見れば「ここからあそこへ回り込むのに P90 なら何秒、M249 なら何秒」が分かります。</p>
+  <pre>流れ：  ① マップを選ぶ → ② 点を置く → ③ 通路でつなぐ → ④ 曲げて壁を避ける → ⑤ 保存
+        （精度を上げるなら ⑥ 縮尺コースを打つ）  → 右の表・PNG で使う</pre>
+
+  <h2>① マップを選ぶ</h2>
+  <p>左上のプルダウンで選びます。<b>地下鉄・シティキャットなど俯瞰図が無いマップは格子だけ</b>が出るので、ゲーム内の全体図（マップ画面）をスクショして、この画面にドラッグ＆ドロップしてください（または <span class="b">下地: 画像を選ぶ</span>）。一度入れるとこのブラウザが覚えます。</p>
+
+  <h2>② 点を置く</h2>
+  <ol>
+    <li><span class="b atk">赤の点</span>（攻め）か <span class="b def">青の点</span>（守り）を押す</li>
+    <li>地図の置きたい場所をクリック → 名前を聞かれるので「Bロング」「CT階段」などと入れる</li>
+    <li>続けて何個でも置ける。やめる時は <span class="b">動かす</span> を押すか <kbd>Esc</kbd></li>
+  </ol>
+
+  <h2>③ 通路でつなぐ</h2>
+  <ol>
+    <li><span class="b">引く</span> を押す</li>
+    <li>点を 1 つクリック → もう 1 つの点をクリック。白い線（通路）がつながる</li>
+    <li>線の真ん中に秒数が出る（上の「秒数」で選んだ武器の時間）</li>
+  </ol>
+  <div class="tip">つないだ線は「人が実際に走る道」です。壁を突き抜けていると秒数が短く出てしまうので、次の「曲げ点」で道なりにしてください。</div>
+
+  <h2>④ 曲げて壁を避ける</h2>
+  <ol>
+    <li><span class="b">曲げ点</span> を押す</li>
+    <li>曲げたい通路をクリックして選ぶ（黄色くなる）</li>
+    <li>人が通る所を順にクリックすると、そこを通るように線が折れる（白い四角＝曲げ点）</li>
+  </ol>
+  <div class="tip"><span class="b">動かす</span> にすると、点も曲げ点もドラッグで位置を直せます。<span class="b danger">消す</span> で点・通路・曲げ点をクリックすると消えます（通路を選んで <kbd>Delete</kbd> でも消える）。</div>
+
+  <h2>⑤ 保存</h2>
+  <ul>
+    <li>自分のパソコンで開いている時（localhost）: <span class="b save">保存</span> を押すだけ</li>
+    <li>GitHub のページで開いている時: <span class="b">JSONファイル</span> でファイルを落として保管。次に開く時は <span class="b">JSON読む</span> でそのファイルを選ぶと戻る</li>
+  </ul>
+  <div class="tip">保存前に別のマップへ切り替えたりリロードすると、打った物が消えます。こまめに保存してください。</div>
+
+  <h2>⑥ 縮尺コースを打つ（秒数を正確にする）</h2>
+  <p>秒数は「画面の長さ ÷ 1 秒に進む長さ」で出しています。マップごとに 1 回、<b>実際にゲームで走って秒数を測ったコース</b>を教えると正確になります。</p>
+  <ol>
+    <li>ゲームでナイフを持ち、どこかの壁からどこかの壁まで W 押しっぱなしで走って秒数を測る（第3補給倉庫の Bロングは 8.97 秒）</li>
+    <li><span class="b cal">コースを打つ</span> を押し、走り始めた所 → 走り終わった所の順にクリック</li>
+    <li>かかった秒数を入れる → 緑の点線で表示され、「実測 ○○px/秒」になる。<span class="b save">保存</span> で確定</li>
+  </ol>
+  <div class="tip">打っていないマップは「仮」として第3補給倉庫の縮尺を流用します。目安にはなりますが、マップによって絵の大きさが違うので、本気で使うなら 1 本測ってください。</div>
+
+  <h2>右の欄の見方</h2>
+  <ul>
+    <li><b>通路（px・秒・比率）</b>: 引いた線ごとの長さと秒数。<span class="b">基準</span> を押した通路が 1.00 になり、他の通路はその何倍かが出る。× で消せる</li>
+    <li><b>全地点間の移動時間</b>: 全部の点どうしの最短の秒数（通路をたどった合計）。「―」はつながっていない</li>
+    <li><b>地点</b>: 置いた点の一覧。× で点ごと消せる</li>
+  </ul>
+
+  <h2>秒数の武器を変える・画像にする</h2>
+  <ul>
+    <li>上の「秒数」プルダウンで ナイフ / P90 / SCAR・AK-47 / M249 / 歩き を切り替え。線の秒数と表が全部変わる</li>
+    <li>「線に秒数」のチェックを外すと線の数字を隠せる（点を打つ時に見やすい）</li>
+    <li><span class="b">PNG（この武器）</span> で今の武器の画像、<span class="b">PNG（全武器）</span> で 5 枚まとめて保存。地図＋右の表が 1 枚に入る</li>
+  </ul>
+  <div class="tip">速さの元データ（実測）: ナイフ 8.97 秒のコースを P90 9.07 / SCAR 9.44 / M249 12.15 / 歩き 13.47 秒。歩きはどの武器でも同じ。しゃがみは未計測。</div>
+
+  <h2>困った時</h2>
+  <ul>
+    <li>線が引けない → 点の「上」をクリックしているか確認（丸の中）</li>
+    <li>間違えて置いた → <span class="b danger">消す</span> でクリック、または右の一覧の ×</li>
+    <li>全部やり直したい → <span class="b danger">全部消す</span>（縮尺だけは残る）</li>
+    <li>一覧にマップが増えない・直したはずの物が古い → <kbd>Ctrl</kbd>+<kbd>F5</kbd> で読み直す</li>
+  </ul>
+  <p style="text-align:right;margin-top:14px"><button id="helpClose2">閉じる</button></p>
+ </div>
+</div>
 <main>
   <div id="stage"><canvas id="cv"></canvas></div>
   <aside>
@@ -212,6 +304,11 @@ $('#png').onclick = () => dl(`${mapName()}_${WPN().label.replace(/[\/ ]/g, '')}_
 $('#pngall').onclick = async () => { const keep = weapon; for (const w of IDX.weapons) { weapon = w.id; dl(`${mapName()}_${w.label.replace(/[\/ ]/g, '')}_移動時間.png`, exportDataURL()); await new Promise(r => setTimeout(r, 400)); } weapon = keep; render(); };
 window.__ed = { exportDataURL, setWeapon: w => { weapon = w; $('#wsel').value = w; render(); }, load, get ready(){ return !!G && isReady; } };
 $('#mapSel').onchange = () => load($('#mapSel').value);
+const helpBox = $('#helpBox'); const showHelp = on => helpBox.classList.toggle('show', on);
+$('#helpBtn').onclick = () => showHelp(true); $('#helpClose').onclick = $('#helpClose2').onclick = () => { showHelp(false); try { localStorage.setItem('saz-ed-help-seen', '1'); } catch(e) {} };
+helpBox.addEventListener('click', e => { if (e.target === helpBox) $('#helpClose').onclick(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && helpBox.classList.contains('show')) $('#helpClose').onclick(); });
+try { if (!localStorage.getItem('saz-ed-help-seen') && !new URLSearchParams(location.search).get('weapon')) showHelp(true); } catch(e) {}
 const q = new URLSearchParams(location.search); if (q.get('weapon')) { weapon = q.get('weapon'); $('#wsel').value = weapon; }
 await load(q.get('map') || IDX.maps[0].map); $('#mapSel').value = G.map;
 })();
