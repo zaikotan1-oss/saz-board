@@ -193,18 +193,8 @@
   "会談上",
   "CT階段"
  ],
- "calib": {
-  "start": [
-   215,
-   112
-  ],
-  "goal": [
-   180,
-   367
-  ],
-  "sec": 8.97,
-  "note": "本人が calib.html で指定（2026-10-04）Bロング 攻め側の壁→B側の段差"
- },
+ "calib": null,
+ "pxs_override": 28.69,
  "edited": true,
  "px_per_knife_sec": 28.69,
  "calibrated": true,

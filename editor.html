@@ -18,6 +18,7 @@
   main { display:grid; grid-template-columns:1fr 400px; }
   #stage { padding:10px; background:#111; display:flex; justify-content:center; align-items:flex-start; }
   canvas { max-width:100%; height:auto; cursor:crosshair; border:1px solid var(--line); touch-action:none; }
+  #stage.drag canvas { outline:3px dashed #f2b705; }
   aside { background:var(--panel); border-left:1px solid var(--line); padding:10px; max-height:calc(100vh - 100px); overflow:auto; }
   aside h2 { font-size:13px; color:var(--sub); margin:10px 0 4px; border-bottom:1px solid var(--line); }
   table { border-collapse:collapse; font-size:12.5px; } td { padding:3px 4px; border-bottom:1px solid #30343d; white-space:nowrap; } td.n { text-align:right; color:var(--acc); font-weight:bold; }
@@ -40,6 +41,7 @@
   <div class="grp"><span class="t">秒数</span><select id="wsel"></select><label class="t"><input type="checkbox" id="showSec" checked> 線に秒数</label></div>
   <div class="grp"><button id="save" class="save">保存</button><button id="dl">JSONファイル</button><button id="ul">JSON読む</button><input type="file" id="ulf" accept=".json" hidden></div>
   <div class="grp"><button id="png">PNG（この武器）</button><button id="pngall">PNG（全武器）</button></div>
+  <div class="grp"><span class="t">下地</span><button id="bg" title="ゲーム内の全体図のスクショを下地にする（ドロップでも可）">画像を選ぶ</button><button id="bgReset" title="元の俯瞰図（無ければ格子）に戻す">戻す</button><input type="file" id="bgf" accept="image/*" hidden></div>
   <button id="clear" class="danger">全部消す</button>
   <span id="msg"></span>
 </header>
@@ -66,8 +68,10 @@ const cv = $('#cv'), ctx = cv.getContext('2d');
 const IDX = await (await fetch('data/timemap/index.json')).json();
 const DB = await (await fetch('maps/maps.json')).json();
 const SAVE = 'http://127.0.0.1:8843';
+const LS_BG = 'saz-board-bg-'; // 作戦ボード（index.html）と同じ記憶場所。片方でドロップした下地はもう片方でも使える
+const loadImg = src => new Promise((ok, ng) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ng; i.src = src; });
 const DEFAULT_PXS = 28.7; // 第3補給倉庫の実測（Bロング 257px = ナイフ 8.97 秒）
-let G = null, img = null, mode = 'move', selEdge = null, refEdge = null, drag = null, addFrom = null, weapon = 'p90', calPts = [], serverOK = false;
+let G = null, img = null, bgOverride = null, isReady = false, MAPW = 800, MAPH = 600, mode = 'move', selEdge = null, refEdge = null, drag = null, addFrom = null, weapon = 'p90', calPts = [], serverOK = false;
 for (const m of IDX.maps) { const o = document.createElement('option'); o.value = m.map; o.textContent = m.name; $('#mapSel').appendChild(o); }
 for (const w of IDX.weapons) { const o = document.createElement('option'); o.value = w.id; o.textContent = w.label; $('#wsel').appendChild(o); }
 $('#wsel').value = weapon; $('#wsel').onchange = () => { weapon = $('#wsel').value; render(); };
@@ -84,9 +88,12 @@ async function load(id){
   try { const r = await fetch(`${SAVE}/load?map=${id}`); serverOK = true; if (r.ok) { fromSaved(await r.json()); got = true; } } catch(err) { serverOK = false; }
   if (!got) { try { const r = await fetch(`data/timemap/edits/${id}.json?t=${Date.now()}`); if (r.ok) { fromSaved(await r.json()); got = true; } } catch(e) {} }
   const m = DB.maps.find(x => x.id === id);
-  img = await new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.src = m.image; });
-  cv.width = img.width; cv.height = img.height;
-  msg((got ? '保存済みを読み込みました。' : 'まだ何も置いていません。') + (serverOK ? '' : '（保存サーバー無し: 「JSONファイル」で保存）'));
+  MAPW = m.w || 800; MAPH = m.h || 600; cv.width = MAPW; cv.height = MAPH;
+  img = null; bgOverride = null;
+  try { if (m.image) img = await loadImg(m.image); } catch(e) { img = null; }
+  try { const d = localStorage.getItem(LS_BG + id); if (d) bgOverride = await loadImg(d); } catch(e) {}
+  isReady = true;
+  msg((got ? '保存済みを読み込みました。' : 'まだ何も置いていません。') + (serverOK ? '' : '（保存サーバー無し: 「JSONファイル」で保存）') + (!img && !bgOverride ? '　※俯瞰図が無いマップ: ゲーム内の全体図のスクショをここにドロップ' : ''));
   render();
 }
 const pts = e => [G.nodes[e.a], ...e.via, G.nodes[e.b]];
@@ -106,7 +113,10 @@ function allPairs(){
   return { names, M };
 }
 function drawMap(c){
-  c.drawImage(img, 0, 0); c.fillStyle = 'rgba(0,0,0,.2)'; c.fillRect(0,0,cv.width,cv.height);
+  const bg = bgOverride || img; c.fillStyle = '#2b2e36'; c.fillRect(0,0,cv.width,cv.height);
+  if (bg) { const s = Math.min(cv.width/bg.width, cv.height/bg.height), dw = bg.width*s, dh = bg.height*s; c.fillStyle = '#000'; c.fillRect(0,0,cv.width,cv.height); c.drawImage(bg, (cv.width-dw)/2, (cv.height-dh)/2, dw, dh); c.fillStyle = 'rgba(0,0,0,.2)'; c.fillRect(0,0,cv.width,cv.height); }
+  else { c.strokeStyle = '#3c404a'; c.lineWidth = 1; for (let x = 0; x < cv.width; x += 50) { c.beginPath(); c.moveTo(x,0); c.lineTo(x,cv.height); c.stroke(); } for (let y = 0; y < cv.height; y += 50) { c.beginPath(); c.moveTo(0,y); c.lineTo(cv.width,y); c.stroke(); }
+    strokeText(c, '俯瞰図なし', cv.width/2, cv.height/2 - 16, 26, '#9aa0ad'); strokeText(c, 'ゲーム内の全体図のスクショをここにドロップ（または「下地: 画像を選ぶ」）', cv.width/2, cv.height/2 + 18, 15, '#9aa0ad'); }
   if (G.calib) { c.setLineDash([8, 6]); c.strokeStyle = '#2fd17a'; c.lineWidth = 3; c.beginPath(); c.moveTo(...G.calib.start); c.lineTo(...G.calib.goal); c.stroke(); c.setLineDash([]); strokeText(c, `縮尺コース ${G.calib.sec}s`, (G.calib.start[0]+G.calib.goal[0])/2, (G.calib.start[1]+G.calib.goal[1])/2 - 14, 11, '#2fd17a'); }
   calPts.forEach(p => { c.fillStyle = '#2fd17a'; c.beginPath(); c.arc(p[0], p[1], 8, 0, Math.PI*2); c.fill(); });
   const refL = refEdge ? plen(pts(refEdge)) : null;
@@ -163,6 +173,16 @@ $('#dl').onclick = () => { const a = document.createElement('a'); a.href = 'data
 $('#ul').onclick = () => $('#ulf').click();
 $('#ulf').onchange = async ev => { const f = ev.target.files[0]; if (!f) return; const e = JSON.parse(await f.text()); if (e.map && e.map !== G.map) { $('#mapSel').value = e.map; await load(e.map); } fromSaved(e); render(); msg('読み込みました'); ev.target.value = ''; };
 
+// ---- 下地（俯瞰図が無いマップ用。ブラウザに記憶・マップごと） ----
+async function useBgFile(f){ const data = await new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(f); }); bgOverride = await loadImg(data); try { localStorage.setItem(LS_BG + G.map, data); msg('下地を差し替えました（このブラウザに記憶）'); } catch(e) { msg('画像が大きすぎてブラウザに記憶できません（今回だけ使います）'); } render(); }
+$('#bg').onclick = () => $('#bgf').click();
+$('#bgf').onchange = async ev => { const f = ev.target.files[0]; if (f) await useBgFile(f); ev.target.value = ''; };
+$('#bgReset').onclick = () => { try { localStorage.removeItem(LS_BG + G.map); } catch(e) {} bgOverride = null; render(); msg('下地を元に戻しました'); };
+const stage = $('#stage');
+stage.addEventListener('dragover', e => { e.preventDefault(); stage.classList.add('drag'); });
+stage.addEventListener('dragleave', () => stage.classList.remove('drag'));
+stage.addEventListener('drop', async e => { e.preventDefault(); stage.classList.remove('drag'); const f = e.dataTransfer.files[0]; if (f && f.type.startsWith('image/')) await useBgFile(f); });
+
 // ---- PNG ----
 function exportDataURL(scale = 2){
   const { names, M } = allPairs(); const refL = refEdge ? plen(pts(refEdge)) : null;
@@ -190,7 +210,7 @@ function exportDataURL(scale = 2){
 const dl = (name, href) => { const a = document.createElement('a'); a.href = href; a.download = name; a.click(); };
 $('#png').onclick = () => dl(`${mapName()}_${WPN().label.replace(/[\/ ]/g, '')}_移動時間.png`, exportDataURL());
 $('#pngall').onclick = async () => { const keep = weapon; for (const w of IDX.weapons) { weapon = w.id; dl(`${mapName()}_${w.label.replace(/[\/ ]/g, '')}_移動時間.png`, exportDataURL()); await new Promise(r => setTimeout(r, 400)); } weapon = keep; render(); };
-window.__ed = { exportDataURL, setWeapon: w => { weapon = w; $('#wsel').value = w; render(); }, load, get ready(){ return !!G && !!img; } };
+window.__ed = { exportDataURL, setWeapon: w => { weapon = w; $('#wsel').value = w; render(); }, load, get ready(){ return !!G && isReady; } };
 $('#mapSel').onchange = () => load($('#mapSel').value);
 const q = new URLSearchParams(location.search); if (q.get('weapon')) { weapon = q.get('weapon'); $('#wsel').value = weapon; }
 await load(q.get('map') || IDX.maps[0].map); $('#mapSel').value = G.map;

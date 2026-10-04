@@ -3,22 +3,66 @@
   {
    "map": "supply3",
    "name": "第3補給倉庫",
-   "calibrated": true
+   "calibrated": true,
+   "image": "maps/supply3.jpg",
+   "w": 800,
+   "h": 647
   },
   {
    "map": "provence",
    "name": "プロバンス",
-   "calibrated": false
+   "calibrated": false,
+   "image": "maps/provence.jpg",
+   "w": 800,
+   "h": 645
   },
   {
    "map": "crossport",
    "name": "クロスポート",
-   "calibrated": false
+   "calibrated": false,
+   "image": "maps/crossport.png",
+   "w": 800,
+   "h": 600
   },
   {
    "map": "dragonroad",
    "name": "ドラゴンロード",
-   "calibrated": false
+   "calibrated": false,
+   "image": "maps/dragonroad.jpg",
+   "w": 800,
+   "h": 640
+  },
+  {
+   "map": "metro",
+   "name": "地下鉄",
+   "calibrated": false,
+   "image": null,
+   "w": 800,
+   "h": 600
+  },
+  {
+   "map": "citycat",
+   "name": "シティキャット",
+   "calibrated": false,
+   "image": null,
+   "w": 800,
+   "h": 600
+  },
+  {
+   "map": "warehouse",
+   "name": "ウェアハウス（TDM）",
+   "calibrated": false,
+   "image": null,
+   "w": 800,
+   "h": 600
+  },
+  {
+   "map": "village",
+   "name": "サドン村（TDM）",
+   "calibrated": false,
+   "image": null,
+   "w": 800,
+   "h": 600
   }
  ],
  "weapons": [

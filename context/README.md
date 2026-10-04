@@ -45,3 +45,4 @@
 - 上げる前に本人の指示で個人情報を点検: CLAUDE.md の `C:/Users/...` を相対表記に直し、コミットの名義を GitHub の匿名メール（`zaikotan1-oss@users.noreply.github.com`、このリポジトリの git config）に書き換えた（`git rebase --root --exec 'git commit --amend --reset-author'`）。.gitignore で tools/runs の録画・maps/raw/*.html は除外済み。
 - Pages 上では保存サーバー（8843）が無いので「JSONファイル」でダウンロード→「JSON読む」で戻す。`data/timemap/edits/<map>.json` は読み込みの初期値になる（supply3 は本人の 8 点）。本人が JSON を送ってきたら edits に置いて `timemap_build.py` → `export_timemap.py` → push。
 - 更新の流し方: 直す → `git add -A && git commit && git push` → 1〜2 分で Pages に反映。
+- 同日: 本人「シティキャットと地下鉄がない」→ エディターの一覧は index.json（俯瞰図のある 4 枚）から作っていた。timemap_build.py で maps.json の全 8 マップを空のまま一覧に入れ、editor.html は俯瞰図の無いマップを格子の下地にして、ゲーム内の全体図のスクショをドロップ／「下地: 画像を選ぶ」で差し替えられるようにした（localStorage `saz-board-bg-<id>`、index.html と共通）。build の `pxs` 未定義（前回の統合時の抜け）も直した。プロバンスは本人が 8 点 6 通路を保存済み → PNG 5 枚を出した。

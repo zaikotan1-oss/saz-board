@@ -106,6 +106,11 @@ GRAPHS.append(build('dragonroad',
     attack=['屋台', '広場', '連通', '橋', 'Bロング', '看板'],
     defend=['Aサイト', 'トラック', 'CT階段', 'じゅうたん', 'ドラム缶', 'Bサイト']))
 
+# 俯瞰図の無いマップ（地下鉄・シティキャット・ウェアハウス・サドン村）も空のまま一覧に入れる（本人が editor で点を打つ）
+for _mid in MAPS:
+    if not any(g['map'] == _mid for g in GRAPHS):
+        GRAPHS.append({'map': _mid, 'nodes': {}, 'edges': [], 'attack': [], 'defend': [], 'calib': None})
+
 # ---------------- 計算 ----------------
 out_dir = os.path.join(ROOT, 'data', 'timemap'); os.makedirs(out_dir, exist_ok=True)
 # 第3補給倉庫の校正
@@ -132,8 +137,9 @@ for G in GRAPHS:
     else:
         # 本人が置いた物だけを使う方針（2026-10-04）。私の仮の点は出さない
         G['nodes'] = {}; G['edges'] = []; G['attack'] = []; G['defend'] = []; G['edited'] = False
-    G['px_per_knife_sec'] = round(px_per_knife_sec, 2)
-    G['calibrated'] = G['calib'] is not None
+    pxs = G.get('pxs_override') or px_per_knife_sec  # マップごとの実測があればそれ、無ければ第3補給倉庫の値を仮に流用
+    G['px_per_knife_sec'] = round(pxs, 2)
+    G['calibrated'] = G.get('pxs_override') is not None or G['calib'] is not None
     G['weapons'] = WEAPONS
     names = list(G['nodes'].keys())
     M = {}; paths = {}
@@ -161,7 +167,7 @@ for G in GRAPHS:
     }
     G['all_names'] = names
     json.dump(G, open(os.path.join(out_dir, G['map'] + '.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-    index.append({'map': G['map'], 'name': MAPS[G['map']]['name'], 'calibrated': G['calibrated']})
+    index.append({'map': G['map'], 'name': MAPS[G['map']]['name'], 'calibrated': G['calibrated'], 'image': MAPS[G['map']].get('image'), 'w': MAPS[G['map']].get('w', 800), 'h': MAPS[G['map']].get('h', 600)})
     print(G['map'], 'nodes', len(names), 'edges', len(G['edges']), 'calibrated' if G['calibrated'] else '未校正')
     for r in G['tables']['攻めポイント間'][:3]: print('   ', r)
 json.dump({'maps': index, 'weapons': WEAPONS, 'knife_sec_course': KNIFE_SEC}, open(os.path.join(out_dir, 'index.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
