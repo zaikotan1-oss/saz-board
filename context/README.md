@@ -39,3 +39,9 @@
 - 時間の取り方: `tools/speedtest.py --record` で画面中央（武器と HUD を避けた上半分）の前コマとの差分を 30fps で記録し、`--analyze` で「動き出し（差分>1.5 が3コマ）」→「壁（走行時水準と壁水準の中間を下回り続ける最初）」を出す。ナイフの素振りのスパイクは 9 コマ中央値で均す。録画の終わりに本人が動いても壊れないよう、キー離しは最初の静止プラトーで取る。
 - 落とし穴: 私の SendInput のキー・マウスはゲームに無視される（computer-use の hold_key は効く）。ミニマップは透過で下の景色が混ざるので距離測定に使えない。壁に斜めに当たると壁ずりで到着が取れないことがある。ラグが入った本は本人申告で除外。
 - 結果は `data/mobility.md` の「実測」節と `tools/runs/results.json`。AK は SCAR で代用（本人判断）、しゃがみは未計測。
+
+## 2026-10-04 GitHub へ公開
+- リポジトリ: https://github.com/zaikotan1-oss/saz-board （公開）。Pages: https://zaikotan1-oss.github.io/saz-board/ （ボード）／ `editor.html` （移動時間エディター）。
+- 上げる前に本人の指示で個人情報を点検: CLAUDE.md の `C:/Users/...` を相対表記に直し、コミットの名義を GitHub の匿名メール（`zaikotan1-oss@users.noreply.github.com`、このリポジトリの git config）に書き換えた（`git rebase --root --exec 'git commit --amend --reset-author'`）。.gitignore で tools/runs の録画・maps/raw/*.html は除外済み。
+- Pages 上では保存サーバー（8843）が無いので「JSONファイル」でダウンロード→「JSON読む」で戻す。`data/timemap/edits/<map>.json` は読み込みの初期値になる（supply3 は本人の 8 点）。本人が JSON を送ってきたら edits に置いて `timemap_build.py` → `export_timemap.py` → push。
+- 更新の流し方: 直す → `git add -A && git commit && git push` → 1〜2 分で Pages に反映。
