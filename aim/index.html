@@ -128,7 +128,7 @@ a{color:var(--accent)}
     <div class="tabs" id="rankTabs"></div>
     <div class="tablewrap">
       <table>
-        <thead><tr><th class="l">順位</th><th class="l">名前</th><th>最高点</th><th>その時の感度</th><th>平均</th><th>回数</th></tr></thead>
+        <thead><tr><th class="l">順位</th><th class="l">名前</th><th>最高点</th><th>その時の感度</th></tr></thead>
         <tbody id="rankBody"></tbody>
       </table>
     </div>
@@ -222,11 +222,11 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
     var list=Object.keys(by).map(function(n){var l=by[n];var best=l.reduce(function(p,q){return q.score>p.score?q:p;},l[0]);var s=stats(l);return{name:n,best:best.score,sens:best.sens,avg:s.avg,n:s.n};});
     list.sort(function(a,b){return b.best-a.best||b.avg-a.avg;});
     var tb=$('rankBody');tb.innerHTML='';
-    if(!list.length){tb.innerHTML='<tr><td class="l" colspan="6">まだ記録がありません。最初の 1 人になってください。</td></tr>';return;}
+    if(!list.length){tb.innerHTML='<tr><td class="l" colspan="4">まだ記録がありません。最初の 1 人になってください。</td></tr>';return;}
     list.forEach(function(x,i){
       var tr=document.createElement('tr');if(x.name===myName())tr.className='me';
       var rk=i<3?'<span class="medal m'+(i+1)+'">'+(i+1)+'</span>':(i+1);
-      tr.innerHTML='<td class="rank l">'+rk+'</td><td class="name">'+esc(x.name)+'</td><td><b>'+x.best+'</b></td><td>'+fmt(x.sens,2)+'</td><td>'+fmt(x.avg,1)+'</td><td>'+x.n+'</td>';
+      tr.innerHTML='<td class="rank l">'+rk+'</td><td class="name">'+esc(x.name)+'</td><td><b>'+x.best+'</b></td><td>'+fmt(x.sens,2)+'</td>';
       tb.appendChild(tr);
     });
   }
