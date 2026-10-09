@@ -181,7 +181,7 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
   // ---- サーバー ----
   function fetchRows(){
     if(!online){rows=local.rows||[];status('記録置き場が未設定なので、この端末の中だけに記録しています。');renderAll();return;}
-    status('記録を読み込み中…');
+    status('記録を読み込み中…（最初は 10 秒ほどかかります）');
     fetch(API_URL+'?action=list&_='+Date.now(),{method:'GET',redirect:'follow'}).then(function(res){return res.json();}).then(function(j){
       if(!j.ok) throw new Error(j.error||'bad');
       rows=j.rows||[]; status('記録 '+rows.length+' 件（'+new Date().toLocaleTimeString('ja-JP')+' に読み込み）'); renderAll();
@@ -300,6 +300,7 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
 
   load();
   $('name').value=local.name;$('saz').value=local.saz;$('sazy').value=local.sazy||10;$('sens').value=isFinite(local.sens)&&local.sens>0?fmt(local.sens,2):fmt(curSens(),2);
+  renderPick(); renderRank(); renderWho(); renderMy();
   fetchRows();
 })();
 </script>
