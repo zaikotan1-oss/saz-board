@@ -1,0 +1,368 @@
+<title>サドンZP感度 Aiming.Pro 確認手順</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+/* 配置: 1列の読み物。本題「感度が合っているかの確かめ方」を最初に大きく置き、設定手順と計算機は後ろ。番号は実際の順番 */
+:root{
+  --bg:#f3f4f2; --paper:#ffffff; --fg:#1c2128; --muted:#5b6470; --line:#d7dbd3;
+  --accent:#e0641c; --accent-ink:#ffffff; --tint:#fdf1e8; --code:#eef0ec; --good:#2f7d4f; --good-tint:#e6f3ea;
+  --display:"Barlow Condensed","Noto Sans JP",system-ui,sans-serif;
+  --body:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#13171c; --paper:#1b2027; --fg:#e8eaec; --muted:#9aa3ad; --line:#2d343d;
+  --accent:#f08a46; --accent-ink:#1b1309; --tint:#2a2219; --code:#242a32; --good:#6fc48f; --good-tint:#1e2f25; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#13171c; --paper:#1b2027; --fg:#e8eaec; --muted:#9aa3ad; --line:#2d343d;
+  --accent:#f08a46; --accent-ink:#1b1309; --tint:#2a2219; --code:#242a32; --good:#6fc48f; --good-tint:#1e2f25; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.8;margin:0;padding-inline:16px;padding-block:24px 64px}
+.wrap{max-width:780px;margin-inline:auto;display:grid;gap:40px}
+h1{font-family:var(--display);font-size:clamp(34px,7vw,54px);line-height:1.1;margin:0;text-wrap:balance;letter-spacing:.01em}
+h2{font-family:var(--display);font-size:30px;line-height:1.2;margin:0 0 12px;letter-spacing:.02em}
+h3{font-size:18px;margin:0 0 6px}
+h4{font-size:16px;margin:14px 0 4px}
+p{margin:0 0 10px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.lead{color:var(--muted);font-size:15px}
+.hero{display:grid;gap:12px}
+.jump{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.jump a{font-size:14px;text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:4px 12px;color:var(--fg);background:var(--paper)}
+.jump a.main{border-color:var(--accent);color:var(--accent);font-weight:700}
+.main{background:var(--paper);border:3px solid var(--accent);border-radius:12px;padding:22px 22px 26px;display:grid;gap:18px}
+.main>.eyebrow{color:var(--accent)}
+.goal{background:var(--tint);border-radius:8px;padding:12px 16px}
+.goal .big{font-family:var(--display);font-size:clamp(22px,4.5vw,30px);line-height:1.2;font-weight:700}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.two>div{border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:0}
+.two .k{font-family:var(--display);font-size:22px;font-weight:700;color:var(--accent)}
+.step{border-top:1px solid var(--line);padding-top:16px;display:grid;gap:8px}
+.step .t{display:flex;align-items:center;gap:12px}
+.step .t b{font-family:var(--display);font-size:26px;font-weight:700;color:var(--accent-ink);background:var(--accent);border-radius:8px;min-width:44px;height:44px;display:grid;place-items:center;line-height:1;flex:none}
+.step .t h3{margin:0;font-size:20px}
+ol.plain{margin:4px 0 0;padding-left:1.4em;display:grid;gap:6px}
+ul.plain{margin:4px 0 0;padding-left:1.2em;display:grid;gap:6px}
+.sign{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sign>div{border-radius:8px;padding:10px 14px;background:var(--code);min-width:0}
+.sign .k{font-weight:700}
+figure{margin:10px 0 0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--paper)}
+figure img{display:block;width:100%;height:auto}
+figcaption{font-size:13px;color:var(--muted);padding:6px 12px;border-top:1px solid var(--line)}
+kbd{font-family:var(--body);font-size:13px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 6px;background:var(--code)}
+.ui{font-weight:700;color:var(--accent)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;background:var(--paper)}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:right;vertical-align:top}
+th{font-weight:700;color:var(--muted);font-size:13px}
+td:first-child,th:first-child{text-align:left}
+.txt td,.txt th{text-align:left}
+.tablewrap{overflow-x:auto}
+.log input{font:inherit;font-size:18px;width:5.5em;max-width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);box-sizing:border-box;font-variant-numeric:tabular-nums;text-align:right}
+.log input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.log th.cur{color:var(--accent)}
+.log td.win{background:var(--good-tint);font-weight:700}
+.verdict{border-radius:8px;padding:12px 16px;background:var(--code);font-weight:500}
+.verdict.ok{background:var(--good-tint);color:var(--good)}
+.answer{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:18px 20px;display:grid;gap:10px}
+.answer .big{font-family:var(--display);font-size:clamp(24px,5vw,36px);line-height:1.15;font-weight:700}
+.answer .big b{color:var(--accent)}
+.formula{font-family:var(--display);font-size:22px;letter-spacing:.02em;background:var(--code);border-radius:8px;padding:6px 14px;display:inline-block;font-variant-numeric:tabular-nums}
+.calc{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:18px 20px;display:grid;gap:14px}
+.calc .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.calc label{display:grid;gap:4px;font-size:14px;color:var(--muted);min-width:0}
+.calc input{font:inherit;font-size:20px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);width:100%;box-sizing:border-box;font-variant-numeric:tabular-nums}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.out{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.out div{background:var(--tint);border-radius:8px;padding:10px 14px;min-width:0}
+.out .k{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.out .v{font-family:var(--display);font-size:32px;line-height:1.1;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.out .s{font-size:13px;color:var(--muted)}
+.note{font-size:14px;color:var(--muted)}
+ol.steps{list-style:none;margin:0;padding:0;display:grid;gap:26px;counter-reset:s}
+ol.steps>li{display:grid;grid-template-columns:44px 1fr;gap:14px;counter-increment:s;min-width:0}
+ol.steps>li::before{content:counter(s);font-family:var(--display);font-size:28px;font-weight:700;color:var(--accent-ink);background:var(--accent);border-radius:8px;height:44px;display:grid;place-items:center;line-height:1}
+.faq{display:grid;gap:14px}
+.faq div{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
+a{color:var(--accent)}
+a:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.src{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+@media (max-width:520px){.calc .row,.out,.two,.sign{grid-template-columns:1fr}.log input{width:4.5em}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Sudden Attack Zero Point × Aiming.Pro</div>
+    <h1>サドンの感度が自分に合っているか、Aiming.Pro で確かめる</h1>
+    <p class="lead">サドンアタック ZP の感度をそのまま Aiming.Pro に持ち込み、「今の感度でいいのか、上げるべきか、下げるべきか」を Hexakill 1 本の点数で確かめる手順です。2026 年 10 月 8 日に実際にやって確かめました。</p>
+    <nav class="jump">
+      <a class="main" href="#check">確かめ方（本題）</a>
+      <a href="#setup">画面の順番（スクショ付き）</a>
+      <a href="#calc">計算機</a>
+      <a href="#faq">よくある疑問</a>
+      <a href="https://zaikotan1-oss.github.io/saz-board/aim/" target="_blank" rel="noopener">感度くらべ（記録ページ）</a>
+    </nav>
+  </header>
+
+  <section class="main" id="check">
+    <div class="eyebrow">本題</div>
+    <div class="goal">
+      <div class="big">今の感度でいいのか、2 割上げるか、2 割下げるか。Benchmarks の一番上「Hexakill」だけを 3 通りの感度でやって、点が一番伸びたものを採る。</div>
+      <p class="note" style="margin:6px 0 0">Aiming.Pro には感度を自動で探す機能はありません（公式ガイドと画面で確認済み。成績にも「行き過ぎ／足りない」の統計は出ません）。だから自分で 3 通りを比べます。Hexakill 1 本なら 10 分で終わります。</p>
+    </div>
+
+    <p>確かめることは 2 つあります。順番にやります。</p>
+    <div class="two">
+      <div><div class="k">A. 同じ速さになっているか</div>サドンと Aiming.Pro で、マウスを同じだけ動かして同じだけ回るか。これが合っていないと、B の結果をサドンに持ち帰れません。5 分。</div>
+      <div><div class="k">B. その感度が自分に合っているか</div>今の感度・2 割下げ・2 割上げの 3 通りで Hexakill をやり、点を比べる。10 分。</div>
+    </div>
+
+    <div class="step">
+      <div class="t"><b>A</b><h3>同じ速さになっているか（5 分）</h3></div>
+      <p>操作の仕方（どこを押すか）は、下の「<a href="#setup">画面の順番</a>」にスクショ付きで全部あります。設定がまだなら先にそちらを 1 回通してください（横 7 なら 0.21、縦 10 なら 0.3）。</p>
+      <ol class="plain">
+        <li>マウスパッドの左端と右端に目印を決めます（パッドの端そのものでかまいません）。</li>
+        <li>サドンを起動し、何か目印になる物（ドアや柱）に照準を合わせます。左の目印から右の目印までマウスを一気に動かし、<b>どこまで回ったか</b>を覚えます。「ちょうど真後ろ」「真横より少し先」のような覚え方で十分です。3 回やって、だいたい同じになることを確かめます。</li>
+        <li>Aiming.Pro で Hexakill を始め（FIRE TO START の画面のまま、撃たずに）、同じ動きをします。壁の格子の線を目印にすると回った量が分かります。</li>
+        <li>同じだけ回れば A は合格です。B へ進みます。</li>
+      </ol>
+      <h4>ずれていた時の直し方</h4>
+      <ul class="plain">
+        <li>Aiming.Pro の方が<b>回り過ぎる</b> → 横の値を少し下げる（0.21 → 0.19 のように 1 割ずつ）。</li>
+        <li>Aiming.Pro の方が<b>足りない</b> → 横の値を少し上げる（0.21 → 0.23）。</li>
+        <li>直したら手順 2〜3 をやり直します。大きくずれる時は、サドンの感度の読み間違い（縦と横の取り違え）か、マウスの DPI ボタンが途中で切り替わっている可能性が高いです。</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <div class="t"><b>B</b><h3>その感度が自分に合っているか（10 分）</h3></div>
+      <h4>使うドリルは Hexakill 1 本</h4>
+      <p>左の <span class="ui">PLAY</span> → <span class="ui">BENCHMARKS</span> を開くと「Overall Aim」の 6 本が並びます（押す所は下の「画面の順番」の 2〜3）。使うのは<b>一番上の Hexakill</b> だけです。止まった的 6 個を次々に撃つ 1 分のドリルで、フリックの正確さがそのまま点になります。感度が高すぎると的を通り過ぎてから戻り、低すぎると的の手前で止まって刻むので、感度の違いが一番素直に点に出ます。</p>
+      <p class="note"><b>作った人の実感（2026-10-08）：</b>最初は性質の違う 3 本（Hexakill・Static Switching・Horizontal Smoothness）で比べる手順にしていましたが、実際にやってみると 3 本 × 3 通り × 3 回 ＝ 27 回は面倒で続きませんでした。Hexakill だけでも傾向は十分に分かるので、1 本に絞っています。3 本でやりたい人は<a href="#three">下の補足</a>へ。</p>
+      <figure><img src="img/08_benchmarks.jpg" alt="Benchmarks の画面。一番上に Hexakill の PLAY ボタン" width="941" height="419" loading="lazy"><figcaption>Benchmarks の画面。一番上の Hexakill の PLAY で始まる</figcaption></figure>
+      <h4>やり方</h4>
+      <ol class="plain">
+        <li><b>今の感度</b>（例 0.21）で Hexakill を 3 回やり、<b>一番いい点</b>を下の表に書きます。1 回目は慣らしなので、点が伸びるのは普通です。</li>
+        <li>設定を開き（画面の順番の 5〜6：クリック → <kbd>Esc</kbd> → SETTINGS）、横を<b>2 割下げます</b>（0.21 → 0.17）。縦も同じ比率で下げます（0.3 → 0.24）。Hexakill を 3 回やり、一番いい点を書きます。</li>
+        <li>横を<b>2 割上げて</b>（0.25、縦 0.36）同じことをします。</li>
+        <li>表が埋まると、下に判定が出ます。<b>点が一番良かった感度</b>が、今の自分に合っている感度です。</li>
+      </ol>
+      <p class="note">やる順番は「今 → 下げ → 上げ」でなくても構いませんが、3 通りとも<b>同じ日・同じ姿勢・同じ DPI</b> でやってください。日をまたぐと腕の調子の差が感度の差より大きくなります。</p>
+
+      <p><b>点の記録と平均は、専用ページ「<a href="https://zaikotan1-oss.github.io/saz-board/aim/" target="_blank" rel="noopener">感度くらべ</a>」でもできます。</b>感度ごとに何回でも記録でき、平均と最高で判定します。スマホでも使えて、結果を LINE 用の文字や URL にして人に見せられます。</p>
+      <h4>点を書き込む表（この端末のブラウザに残ります）</h4>
+      <p class="note">Hexakill の行だけ埋めれば判定が出ます。下の 2 行は 3 本でやる人用で、空のままで構いません。</p>
+      <div class="tablewrap log">
+      <table>
+        <thead><tr><th>ドリル</th><th>2 割下げ<br><span id="lblLow">0.17</span></th><th class="cur">今の感度<br><span id="lblCur">0.21</span></th><th>2 割上げ<br><span id="lblHigh">0.25</span></th></tr></thead>
+        <tbody id="logBody">
+          <tr><td><b>Hexakill</b></td><td><input id="s0l" type="number" inputmode="numeric" min="0" placeholder="点"></td><td><input id="s0c" type="number" inputmode="numeric" min="0" placeholder="点"></td><td><input id="s0h" type="number" inputmode="numeric" min="0" placeholder="点"></td></tr>
+          <tr><td><span class="note">Static Switching（任意）</span></td><td><input id="s1l" type="number" inputmode="numeric" min="0" placeholder="点"></td><td><input id="s1c" type="number" inputmode="numeric" min="0" placeholder="点"></td><td><input id="s1h" type="number" inputmode="numeric" min="0" placeholder="点"></td></tr>
+          <tr><td><span class="note">Horizontal Smoothness（任意）</span></td><td><input id="s2l" type="number" inputmode="numeric" min="0" placeholder="点"></td><td><input id="s2c" type="number" inputmode="numeric" min="0" placeholder="点"></td><td><input id="s2h" type="number" inputmode="numeric" min="0" placeholder="点"></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="note">列の見出しの数字は、下の計算機に入れたサドンの横の感度から自動で出ます。</p>
+      <div class="verdict" id="verdict">Hexakill の 3 通りの点を入れると、ここに判定が出ます。</div>
+
+      <h4>判定の読み方</h4>
+      <ul class="plain">
+        <li><b>今の感度が勝った</b> → サドンの感度はそのままで大丈夫です。あとは練習あるのみ。</li>
+        <li><b>下げた方が勝った</b> → サドンの感度も 2 割下げてみます（横 7 → 5.6、縦 10 → 8）。1 週間使って慣れたら、もう一度この表をやります。</li>
+        <li><b>上げた方が勝った</b> → サドンの感度を 2 割上げます（横 7 → 8.4、縦 10 → 12）。同じく 1 週間後にもう一度。</li>
+        <li><b>差が小さい（3 つの点が数％以内）</b> → 感度のせいではありません。今のままにして Hexakill を練習します。</li>
+      </ul>
+      <p class="note">Aiming.Pro の値からサドンの値に戻すには ÷ 0.03 です（0.17 → 5.7、0.25 → 8.3）。サドンの感度は整数しか入らないので、近い整数にします。</p>
+
+      <h4 id="three">補足：もっと確かめたい人向け（3 本で比べる）</h4>
+      <p>Hexakill はフリックだけなので、追い（トラッキング）や大きな振りも見たい人は、同じ Benchmarks の Static Switching と Horizontal Smoothness を足して 3 本で比べます。表の下 2 行に点を入れると、<b>3 本のうち 2 本以上で最高だった感度</b>で判定します。時間は 3 倍（30 分）かかります。</p>
+      <div class="tablewrap">
+      <table class="txt">
+        <thead><tr><th>ドリル</th><th>何をするか</th><th>感度が高すぎるとこうなる</th><th>低すぎるとこうなる</th></tr></thead>
+        <tbody>
+          <tr><td><b>Hexakill</b><br><span class="note">Click Timing</span></td><td>止まった的 6 個を次々に撃つ。フリックの正確さ</td><td>的を通り過ぎてから戻る。外れが増える</td><td>的の手前で止まり、ちょんちょんと刻んでから撃つ。時間がかかる</td></tr>
+          <tr><td><b>Static Switching</b><br><span class="note">Target Switching</span></td><td>離れた的から的へ照準を移す。大きな振り</td><td>行き過ぎる。戻しで時間を失う</td><td>腕を大きく動かすことになり、パッドが足りなくなる</td></tr>
+          <tr><td><b>Horizontal Smoothness</b><br><span class="note">Tracking</span></td><td>横に動く的に照準を乗せ続ける。追いの滑らかさ</td><td>線がガタつき、的から外れがち</td><td>的の動きに追いつけず、遅れる</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="answer" id="calc">
+    <div class="eyebrow">換算</div>
+    <div class="big">Aiming.Pro の感度 ＝ サドンの感度 <b>× 0.03</b></div>
+    <div><span class="formula">例：横 7 → 0.21　縦 10 → 0.3</span></div>
+    <p class="note">同じマウスを同じ DPI のまま使うなら、DPI は打ち消し合うので知らなくて構いません。サドンの感度（横・縦）だけ分かれば計算できます。</p>
+  </section>
+
+  <section class="calc">
+    <h2>計算機</h2>
+    <p class="note">サドンの設定画面にある「マウス感度」の数字を入れてください。縦横を分けていない人は同じ数字を両方に入れます。</p>
+    <div class="row">
+      <label>サドンの感度（横）<input id="sx" type="number" inputmode="decimal" min="1" max="100" step="0.1" value="7"></label>
+      <label>サドンの感度（縦）<input id="sy" type="number" inputmode="decimal" min="1" max="100" step="0.1" value="10"></label>
+    </div>
+    <div class="row">
+      <label>マウスの DPI（分かる人だけ。cm/360 の表示にしか使いません）<input id="dpi" type="number" inputmode="numeric" min="50" max="30000" step="50" value="800"></label>
+    </div>
+    <div class="out">
+      <div><div class="k">Aiming.Pro 横</div><div class="v" id="ox">0.21</div><div class="s">Horizontal Sensitivity に入れる</div></div>
+      <div><div class="k">Aiming.Pro 縦</div><div class="v" id="oy">0.3</div><div class="s">Vertical Sensitivity に入れる</div></div>
+      <div><div class="k">比べる用：2 割下げ</div><div class="v" id="olow">0.17 / 0.24</div><div class="s">横 / 縦</div></div>
+      <div><div class="k">比べる用：2 割上げ</div><div class="v" id="ohigh">0.25 / 0.36</div><div class="s">横 / 縦</div></div>
+      <div><div class="k">cm/360（横）</div><div class="v" id="ocm">95.0</div><div class="s">マウスを何 cm 動かすと 1 回転するか</div></div>
+      <div><div class="k">eDPI</div><div class="v" id="oedpi">168</div><div class="s">Aiming.Pro 横 × DPI</div></div>
+    </div>
+  </section>
+
+  <section id="setup">
+    <h2>画面の順番（トップページから、押す所をスクショで）</h2>
+    <p class="note">赤い枠が押す所、赤い丸の数字が順番です。設定（6〜13）は最初の 1 回だけ。感度を変えて比べる時は 3〜15 を繰り返し、途中の 6〜13 で数字だけ打ち替えます。アカウントは無くても遊べますが、ゲストのままだと設定も点も 24 時間で消えます。比べる作業が 1 日で終わらないなら、無料アカウントを先に作っておくと楽です。</p>
+    <ol class="steps">
+      <li><div>
+        <h3>トップページで「START AIM TRAINING」</h3>
+        <p><a href="https://aiming.pro/" target="_blank" rel="noopener">aiming.pro</a> を開くとこの画面です。左の青いボタンを押します。アカウントを作ってログインしている人は、この画面が出ずに次の 2 の画面から始まります。</p>
+        <figure><img src="img/10_top.jpg" alt="Aiming.Pro のトップページ。左に START AIM TRAINING の青いボタン" width="800" height="609" loading="lazy"><figcaption>1：START AIM TRAINING</figcaption></figure>
+      </div></li>
+      <li><div>
+        <h3>PLAY の画面で「BENCHMARKS」の大きな板を押す</h3>
+        <p>左の列が PLAY になっていることを確かめて、真ん中の大きな BENCHMARKS を押します。</p>
+        <figure><img src="img/11_play.jpg" alt="PLAY の画面。真ん中に BENCHMARKS の大きな板" width="1568" height="698" loading="lazy"><figcaption>2：BENCHMARKS</figcaption></figure>
+      </div></li>
+      <li><div>
+        <h3>一番上の「Hexakill」の PLAY を押す</h3>
+        <p>6 本並んでいる一番上が Hexakill です。右側の目盛りの上に出る数字（例では 76）が、自分の一番いい点です。まだやっていない人は 0 です。</p>
+        <figure><img src="img/12_benchmarks.jpg" alt="Benchmarks の画面。一番上の Hexakill の PLAY に赤い枠、右の 76 にも枠" width="1568" height="698" loading="lazy"><figcaption>3：Hexakill の PLAY。右の枠が自分の点の出る所</figcaption></figure>
+      </div></li>
+      <li><div>
+        <h3>読み込みを待つ（10〜20 秒）</h3>
+        <p>六角形の中の％が 100 になるまで待ちます。何も押さなくて大丈夫です。</p>
+        <figure><img src="img/13_loading.jpg" alt="Hexakill の読み込み画面。六角形の中に 0%" width="1568" height="698" loading="lazy"><figcaption>読み込み中。押す所はありません</figcaption></figure>
+      </div></li>
+      <li><div>
+        <h3>「FIRE TO START」が出たら画面を 1 回クリックし、<kbd>Esc</kbd> を押す</h3>
+        <p>設定を直す時はここで止めます。<b>先に画面をクリック</b>してから <kbd>Esc</kbd> です（クリックせずに Esc を押すと、ドリルから出てしまいます）。もう設定が済んでいる人は、クリックのあとそのまま撃ち始めれば 1 分のドリルが始まります。</p>
+        <figure><img src="img/14_fire.jpg" alt="FIRE TO START の画面。中央の文字と右下の Esc Pause に赤い枠" width="1568" height="698" loading="lazy"><figcaption>4：画面を 1 回クリック → 5：Esc（右下の表示のとおり）</figcaption></figure>
+      </div></li>
+      <li><div>
+        <h3>PAUSED の画面で「SETTINGS」</h3>
+        <p>上から 3 つ目です。LEGACY SETTINGS ではありません。</p>
+        <figure><img src="img/15_paused.jpg" alt="PAUSED の画面。SETTINGS に赤い枠" width="1568" height="698" loading="lazy"><figcaption>6：SETTINGS</figcaption></figure>
+      </div></li>
+      <li><div>
+        <h3>CONTROLS → Mouse → 「Separate X/Y」をオン</h3>
+        <p>左上の CONTROLS が青くなっていることを確かめ（7）、その下の Mouse（8）を見ます。Separate X/Y（9）をオンにすると、感度の行が Horizontal（横）と Vertical（縦）の 2 行になります。サドンで縦横が同じ数字の人は、オンにしなくて構いません。</p>
+        <figure><img src="img/16_settings.jpg" alt="CONTROLS の Mouse タブ。CONTROLS・Mouse・Separate X/Y に赤い枠" width="1568" height="698" loading="lazy"><figcaption>7：CONTROLS → 8：Mouse → 9：Separate X/Y をオン</figcaption></figure>
+      </div></li>
+      <li><div>
+        <h3>横（10）と縦（11）の数字を打ち替え、保存マーク（12）→ BACK（13）</h3>
+        <p>数字の欄をクリックして打ち替えます（横 7 なら 0.21、縦 10 なら 0.3。上の計算機で出た値）。欄の右に出るフロッピーの絵（12）か <kbd>Tab</kbd> で確定します。0.3001 のように末尾がずれても気にしなくて大丈夫です。左下の BACK で PAUSED の画面に戻ります。ゲームの一覧（Aiming.Pro と書いてある所）にサドンは無いので、そのままにします。FOV も 103 のままで問題ありません。</p>
+        <figure><img src="img/17_values.jpg" alt="Horizontal 0.21、Vertical 0.3001 と入った設定画面。数字の欄・保存マーク・BACK に赤い枠" width="1568" height="698" loading="lazy"><figcaption>10：横 → 11：縦 → 12：保存 → 13：BACK</figcaption></figure>
+      </div></li>
+      <li><div>
+        <h3>「RESUME」で戻り、画面をクリックして 1 分遊ぶ</h3>
+        <p>RESUME（14）で FIRE TO START の画面に戻ります。画面をクリックすると 3 秒のカウントのあと的が出るので、1 分間撃ちます。途中でやり直したい時は <kbd>R</kbd> です。</p>
+        <figure><img src="img/18_resume.jpg" alt="PAUSED の画面。RESUME に赤い枠" width="1568" height="698" loading="lazy"><figcaption>14：RESUME</figcaption></figure>
+      </div></li>
+      <li><div>
+        <h3>終わると Benchmarks の画面に戻り、Hexakill の行に点が出る</h3>
+        <p>結果の窓が出たら閉じると、3 の画面に戻ります。Hexakill の目盛りの上の数字（15）が今回までの一番いい点です。この数字を本題の表に書きます。もう一度やる時は同じ行の PLAY を押します。</p>
+        <figure><img src="img/19_score.jpg" alt="Benchmarks の画面。Hexakill の目盛りの上の 76 に赤い枠" width="1568" height="698" loading="lazy"><figcaption>15：ここに点が出る</figcaption></figure>
+      </div></li>
+    </ol>
+    <p class="note">感度を変えて比べる時は、3 の PLAY → 5 のクリックと Esc → 6 の SETTINGS → 10〜13 で数字だけ打ち替え → 14 の RESUME、の順です。</p>
+  </section>
+
+  <section>
+    <h2>早見表（× 0.03）</h2>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>サドンの感度</th><th>Aiming.Pro</th><th>2 割下げ</th><th>2 割上げ</th><th>cm/360 @800DPI</th></tr></thead>
+      <tbody>
+        <tr><td>5</td><td>0.15</td><td>0.12</td><td>0.18</td><td>133.0</td></tr>
+        <tr><td>7</td><td>0.21</td><td>0.17</td><td>0.25</td><td>95.0</td></tr>
+        <tr><td>10</td><td>0.3</td><td>0.24</td><td>0.36</td><td>66.5</td></tr>
+        <tr><td>15</td><td>0.45</td><td>0.36</td><td>0.54</td><td>44.3</td></tr>
+        <tr><td>20</td><td>0.6</td><td>0.48</td><td>0.72</td><td>33.2</td></tr>
+        <tr><td>30（サドンの初期値）</td><td>0.9</td><td>0.72</td><td>1.08</td><td>22.2</td></tr>
+        <tr><td>40</td><td>1.2</td><td>0.96</td><td>1.44</td><td>16.6</td></tr>
+        <tr><td>50</td><td>1.5</td><td>1.2</td><td>1.8</td><td>13.3</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note">cm/360 = 531978 ÷（サドンの感度 × DPI）。Aiming.Pro が勧める範囲は 28〜43 cm ですが、サドンで慣れた速さを持ち込むのが目的なので、無理に合わせる必要はありません。</p>
+  </section>
+
+  <section class="faq" id="faq">
+    <h2>よくある疑問</h2>
+    <div><h3>なぜ 2 割なのか</h3><p>1 割だと腕の調子の差に埋もれて点の差が出ません。3 割以上だと別物の感度になって慣れの差で負けます。2 割は「違いは分かるが、まだ慣れが通用する」幅です。</p></div>
+    <div><h3>3 回ずつで足りるか</h3><p>一番いい点を採るなら 3 回で足ります。面倒なら 2 回でも傾向は出ます。もっと確かめたいなら 5 回にして、一番いい点ではなく 2 番目の点を使うと、まぐれが消えます。</p></div>
+    <div><h3>DPI が分からない</h3><p>同じマウスを同じボタン位置で使う限り、× 0.03 の答えは DPI に関係なく同じです。DPI は cm/360 の表示にしか効きません。マウスの設定ソフトが無い無線マウスなら、本体の DPI ボタンで切り替わる値です。</p></div>
+    <div><h3>縦と横で数字が違う</h3><p>Aiming.Pro の「Separate X/Y」をオンにして別々に入れます。画面の順番の 9〜11 のとおりです。比べる時も縦横を同じ比率で動かします。</p></div>
+    <div><h3>Aiming.Pro の中のゲーム一覧にサドンが無い</h3><p>無いので、一覧は「Aiming.Pro」のままにして計算した数字を直接入れます。変換サイト mouse-sensitivity.com の方には「Sudden Attack Zero Point」があり、同じ答えになります。</p></div>
+    <div><h3>Esc を押したらドリルから出てしまった</h3><p>読み込み直後にそのまま Esc を押すと出てしまいます。先に画面を 1 回クリックしてから Esc を押してください（画面の順番の 4〜5）。</p></div>
+    <div><h3>自動で探してくれるソフトは無いのか</h3><p>Aiming.Pro には無いので別のソフトになります。無料で早いのは 3D Aim Trainer（ブラウザ、2〜5 分）と Aimlabs（Steam、練習中に裏で判定）です。サドンの換算は入っていないかもしれないので、その時は cm/360（横 7・800DPI なら 95 cm）を手で入れます。</p></div>
+    <div><h3>正面の細かい動きは合うのに振り向きが少し違う気がする</h3><p>サドンの視野角（105）と Aiming.Pro の視野角（103）が少し違うためで、換算自体は合っています。気になる人は Aiming.Pro の FOV を 105 にすると近づきます。</p></div>
+  </section>
+
+  <p class="src">出典：<a href="https://www.mouse-sensitivity.com/n/aiming-pro/" target="_blank" rel="noopener">mouse-sensitivity.com の Aiming.Pro 変換ページ</a>で「Sudden Attack Zero Point」を選び、感度 20/800DPI → 0.6、感度 30/1600DPI → 1.8 の 2 点から × 0.03 を確かめました。「自動で探す機能は無い」は <a href="https://aiming.pro/mouse-sensitivity-guide-aimingpro" target="_blank" rel="noopener">Aiming.Pro の感度ガイド</a>と <a href="https://aiming.pro/best-sensitivity-for-aiming" target="_blank" rel="noopener">Best Sensitivity の記事</a>、および成績画面（Insights）で確認。Aiming.Pro の画面は 2026 年 10 月 8 日時点（バージョン 3.1.2）。</p>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var sx=$('sx'),sy=$('sy'),dpi=$('dpi');
+  function r(n,d){return isFinite(n)?(Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toString():'–';}
+  function calc(){
+    var x=parseFloat(sx.value),y=parseFloat(sy.value),d=parseFloat(dpi.value);
+    var ax=x*0.03, ay=y*0.03;
+    $('ox').textContent=r(ax,3); $('oy').textContent=r(ay,3);
+    $('olow').textContent=r(ax*0.8,2)+' / '+r(ay*0.8,2);
+    $('ohigh').textContent=r(ax*1.2,2)+' / '+r(ay*1.2,2);
+    $('ocm').textContent=(x>0&&d>0)?r(531978/(x*d),1):'–';
+    $('oedpi').textContent=(x>0&&d>0)?r(ax*d,0):'–';
+    $('lblLow').textContent=r(ax*0.8,2); $('lblCur').textContent=r(ax,2); $('lblHigh').textContent=r(ax*1.2,2);
+    save();
+  }
+  var ids=[];['0','1','2'].forEach(function(i){['l','c','h'].forEach(function(k){ids.push('s'+i+k);});});
+  var names={l:'2 割下げ',c:'今の感度',h:'2 割上げ'};
+  function judge(){
+    var wins={l:0,c:0,h:0}, filled=0;
+    ['0','1','2'].forEach(function(i){
+      var v={l:parseFloat($('s'+i+'l').value),c:parseFloat($('s'+i+'c').value),h:parseFloat($('s'+i+'h').value)};
+      ['l','c','h'].forEach(function(k){$('s'+i+k).parentElement.classList.remove('win');});
+      var ok=['l','c','h'].every(function(k){return isFinite(v[k]);});
+      if(!ok) return;
+      filled++;
+      var best=Math.max(v.l,v.c,v.h);
+      ['l','c','h'].forEach(function(k){ if(v[k]===best){wins[k]++; $('s'+i+k).parentElement.classList.add('win');} });
+    });
+    var el=$('verdict'); el.classList.remove('ok');
+    var hexOk=['l','c','h'].every(function(k){return isFinite(parseFloat($('s0'+k).value));});
+    if(!hexOk){ el.textContent='Hexakill の 3 通りの点を入れると、ここに判定が出ます。'; save(); return; }
+    var v0={l:parseFloat($('s0l').value),c:parseFloat($('s0c').value),h:parseFloat($('s0h').value)};
+    var top, why;
+    if(filled===1){
+      var best0=Math.max(v0.l,v0.c,v0.h);
+      var tops=['l','c','h'].filter(function(k){return v0[k]===best0;});
+      var spread=(best0-Math.min(v0.l,v0.c,v0.h))/Math.max(best0,1);
+      if(tops.length>1 || spread<0.05){ el.textContent='判定：3 つの点の差が小さい（5％以内）ので、感度のせいではなさそうです。今の感度のままで Hexakill を練習してください。'; el.classList.add('ok'); save(); return; }
+      top=tops[0]; why='Hexakill で最高';
+    } else {
+      var order=['l','c','h'].sort(function(a,b){return wins[b]-wins[a];});
+      if(wins[order[0]]<2){ el.textContent='勝った感度がドリルごとにばらばらです。感度のせいではなさそうなので、今の感度のままで練習を続けてください。'; el.classList.add('ok'); save(); return; }
+      top=order[0]; why=filled+' 本中 '+wins[top]+' 本で最高';
+    }
+    var sens={l:$('lblLow').textContent,c:$('lblCur').textContent,h:$('lblHigh').textContent}[top];
+    var sazX=r(parseFloat(sens)/0.03,1);
+    if(top==='c'){ el.textContent='判定：今の感度（'+sens+'）が'+why+'。サドンの感度はそのままで大丈夫です。'; }
+    else { el.textContent='判定：'+names[top]+'（'+sens+'）が'+why+'。サドンの横の感度を '+sazX+' あたり（÷0.03）にして 1 週間使い、もう一度やってみてください。縦も同じ比率で。'; }
+    el.classList.add('ok');
+    save();
+  }
+  function save(){ try{ var o={sx:sx.value,sy:sy.value,dpi:dpi.value}; ids.forEach(function(id){o[id]=$(id).value;}); localStorage.setItem('saz-aim-check',JSON.stringify(o)); }catch(e){} }
+  function load(){ try{ var o=JSON.parse(localStorage.getItem('saz-aim-check')||'null'); if(!o) return; if(o.sx) sx.value=o.sx; if(o.sy) sy.value=o.sy; if(o.dpi) dpi.value=o.dpi; ids.forEach(function(id){ if(o[id]!=null) $(id).value=o[id]; }); }catch(e){} }
+  load();
+  [sx,sy,dpi].forEach(function(e){e.addEventListener('input',function(){calc();judge();});});
+  ids.forEach(function(id){$(id).addEventListener('input',judge);});
+  calc(); judge();
+})();
+</script>

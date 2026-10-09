@@ -47,3 +47,6 @@
 - 更新の流し方: 直す → `git add -A && git commit && git push` → 1〜2 分で Pages に反映。
 - 同日: 本人「シティキャットと地下鉄がない」→ エディターの一覧は index.json（俯瞰図のある 4 枚）から作っていた。timemap_build.py で maps.json の全 8 マップを空のまま一覧に入れ、editor.html は俯瞰図の無いマップを格子の下地にして、ゲーム内の全体図のスクショをドロップ／「下地: 画像を選ぶ」で差し替えられるようにした（localStorage `saz-board-bg-<id>`、index.html と共通）。build の `pxs` 未定義（前回の統合時の抜け）も直した。プロバンスは本人が 8 点 6 通路を保存済み → PNG 5 枚を出した。
 - 同日: 本人「使ったことない人でもできる説明を付けて」→ editor.html に「？ 説明」ボタンと説明の画面（①マップ ②点 ③通路 ④曲げ点 ⑤保存 ⑥縮尺・右欄の見方・武器/PNG・困った時）。初めて開いた時は自動で出る（localStorage saz-ed-help-seen。PNG 書き出しの ?weapon= 付きでは出さない）。
+
+## Aiming.Pro の感度合わせ（2026-10-08）
+- サドンZP の感度を Aiming.Pro に持っていく説明書: `docs/aimingpro-sens/index.html`（本題は「感度が合っているかの確かめ方」＝今/2割下げ/2割上げを Benchmarks の Hexakill 1本で比べ（本人が試して「3本は面倒、1本で十分」と決めた 10-08）、表に点を入れると自動判定。3本版は補足。計算機と、トップページから押す所を赤枠で示したスクショ 15 手順（tools/annotate_aimingpro_shots.py で印を付ける）は後ろ。PDF は tools/export_aimingpro_pdf.py。Artifact として公開済み）。式は Aiming.Pro = サドン感度 × 0.03。本人の値は横 7・縦 10 → 0.21 / 0.3（Separate X/Y オン）。

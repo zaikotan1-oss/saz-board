@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>感度くらべ（みんなのランキングとマイページ）</title>
+<meta name="description" content="Aiming.Pro の Hexakill などの点を名前つきで記録し、みんなのランキングと、感度ごとの平均で自分に合う感度を判定するマイページ。サドンアタック ZP の感度換算つき。">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#f3f4f2; --paper:#ffffff; --fg:#1c2128; --muted:#5b6470; --line:#d7dbd3;
+  --accent:#e0641c; --accent-ink:#ffffff; --tint:#fdf1e8; --code:#eef0ec; --good:#2f7d4f; --good-tint:#e6f3ea; --bar:#e0641c; --bar2:#c9cdc6; --gold:#c9a227; --silver:#8f98a3; --bronze:#b5733a;
+  --display:"Barlow Condensed","Noto Sans JP",system-ui,sans-serif;
+  --body:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#13171c; --paper:#1b2027; --fg:#e8eaec; --muted:#9aa3ad; --line:#2d343d;
+  --accent:#f08a46; --accent-ink:#1b1309; --tint:#2a2219; --code:#242a32; --good:#6fc48f; --good-tint:#1e2f25; --bar:#f08a46; --bar2:#3a424c; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.7;padding-inline:16px;padding-block:20px 64px}
+.wrap{max-width:720px;margin-inline:auto;display:grid;gap:20px}
+h1{font-family:var(--display);font-size:clamp(30px,7vw,44px);line-height:1.1;margin:0;letter-spacing:.01em}
+h2{font-family:var(--display);font-size:24px;line-height:1.2;margin:0 0 10px;letter-spacing:.02em}
+h3{font-size:16px;margin:12px 0 6px}
+p{margin:0 0 8px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.lead{color:var(--muted);font-size:14px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:grid;gap:12px}
+.card.main{border:3px solid var(--accent)}
+label{display:grid;gap:4px;font-size:13px;color:var(--muted);min-width:0}
+input,select{font:inherit;font-size:18px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);width:100%;font-variant-numeric:tabular-nums}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+button{font:inherit;font-weight:700;border:1px solid var(--line);background:var(--paper);color:var(--fg);border-radius:8px;padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-size:18px}
+button.small{font-size:13px;padding:4px 10px;font-weight:500}
+button:disabled{opacity:.5;cursor:default}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button{border-radius:999px;padding:4px 14px;font-size:14px}
+.tabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.sensbtns{display:flex;flex-wrap:wrap;gap:8px}
+.sensbtns button{font-family:var(--display);font-size:22px;padding:6px 16px;font-variant-numeric:tabular-nums}
+.sensbtns button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.sensbtns button .s{display:block;font-family:var(--body);font-size:11px;font-weight:500;line-height:1.2;opacity:.85}
+.entry{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+.entry input{font-size:28px;font-family:var(--display);font-weight:700}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;background:var(--paper)}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:right;vertical-align:middle}
+th{font-weight:700;color:var(--muted);font-size:13px}
+td.l,th.l{text-align:left}
+td.name{text-align:left;font-weight:700}
+td.rank{font-family:var(--display);font-size:22px;width:3em}
+tr.me td{background:var(--tint)}
+tr.win td{background:var(--good-tint);font-weight:700}
+.medal{display:inline-block;width:1.6em;height:1.6em;border-radius:50%;color:#fff;font-family:var(--display);font-size:16px;line-height:1.6em;text-align:center}
+.m1{background:var(--gold)}.m2{background:var(--silver)}.m3{background:var(--bronze)}
+.tablewrap{overflow-x:auto}
+.chart{display:grid;gap:8px}
+.chart .b{display:grid;grid-template-columns:4.5em 1fr 3.5em;gap:8px;align-items:center;font-variant-numeric:tabular-nums}
+.chart .b .k{font-family:var(--display);font-size:20px;text-align:right}
+.chart .b .bar{height:22px;background:var(--bar2);border-radius:4px;overflow:hidden}
+.chart .b .bar i{display:block;height:100%;background:var(--bar);width:0;transition:width .3s}
+.chart .b.win .bar i{background:var(--good)}
+.chart .b .v{font-family:var(--display);font-size:20px}
+.verdict{border-radius:8px;padding:12px 16px;background:var(--code);font-weight:500}
+.verdict.ok{background:var(--good-tint);color:var(--good)}
+.runs{display:grid;gap:6px}
+.runs .r{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:14px;color:var(--muted)}
+.runs .r b{font-family:var(--display);font-size:18px;color:var(--fg);font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--code);border-radius:999px;padding:2px 10px;font-variant-numeric:tabular-nums}
+.chip button{border:none;background:none;padding:0 2px;color:var(--muted);font-size:14px;line-height:1}
+.status{font-size:13px;color:var(--muted)}
+.status.err{color:#b4321e}
+.note{font-size:13px;color:var(--muted)}
+a{color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+@media (max-width:480px){.row3{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Aiming.Pro × Sudden Attack Zero Point</div>
+    <h1>感度くらべ</h1>
+    <p class="lead">Aiming.Pro の Hexakill（任意で他 2 本も）の点を名前つきで記録して、みんなのランキングと、自分に合う感度の判定（マイページ）を出します。やり方の説明書は<a href="guide.html">こちら</a>。</p>
+    <div class="status" id="status">記録を読み込み中…</div>
+  </header>
+
+  <section class="card">
+    <h2>使い方</h2>
+    <ol style="margin:0;padding-left:1.4em;display:grid;gap:4px">
+      <li><b>名前</b>を入れる（ランキングに出る名前。毎回同じ名前で）。サドンの横の感度も入れると、Aiming.Pro の感度の候補が 3 つ（今・2 割下げ・2 割上げ）できます。</li>
+      <li>Aiming.Pro の設定を候補のどれかにして、<b>Hexakill を 1 分</b>やる（やり方は<a href="guide.html">説明書</a>）。</li>
+      <li>戻ってきたら、<b>やった感度のボタンを押してから点を入れて「保存」</b>。感度ごとに 3 回ずつが目安です。</li>
+      <li>「みんなのランキング」に最高点で順位が出ます。ドリルの名前を押すと切り替わります。</li>
+      <li>「マイページ」で自分の名前を選ぶと、感度ごとの平均と「どの感度が合っているか」の判定が出ます。他の人の名前を選べば、その人のページも見られます。</li>
+    </ol>
+    <p class="note">Static Switching と Horizontal Smoothness は任意です。やった時はドリルの欄を切り替えて同じように保存してください。自分の点を消したい時は、マイページの一覧で点の横の × を押します（自分の端末から入れた物だけ消せます）。</p>
+  </section>
+
+  <section class="card main">
+    <h2>1. 点を記録する</h2>
+    <div class="row3">
+      <label>名前（ランキングに出ます）<input id="name" type="text" maxlength="20" placeholder="例 ざいこ"></label>
+      <label>ドリル<select id="drill"><option>Hexakill</option><option>Static Switching</option><option>Horizontal Smoothness</option></select></label>
+      <label>サドンの横の感度<input id="saz" type="number" inputmode="decimal" min="1" max="100" step="1" value="7"></label>
+    </div>
+    <p class="note">Aiming.Pro の感度（サドン × 0.03）。比べる候補は 3 つ。数字は直せます。今やった感度を押してから点を入れてください。</p>
+    <div class="sensbtns" id="pickList"></div>
+    <div class="row">
+      <button class="small" id="resetCand">サドンの感度から ±20% で候補を作り直す</button>
+      <button class="small" id="editCand">候補の数字を直す</button>
+    </div>
+    <div class="entry">
+      <label>今回の点（Score）<input id="score" type="number" inputmode="numeric" min="0" placeholder="例 76"></label>
+      <button class="primary" id="add">保存</button>
+    </div>
+    <p class="note">保存すると、みんなの記録置き場（Google スプレッドシート）に名前・ドリル・感度・点が入ります。消せるのは自分の端末から入れた物だけです。</p>
+  </section>
+
+  <section class="card">
+    <h2>2. みんなのランキング</h2>
+    <div class="tabs" id="rankTabs"></div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th class="l">順位</th><th class="l">名前</th><th>最高点</th><th>その時の感度</th><th>平均</th><th>回数</th></tr></thead>
+        <tbody id="rankBody"></tbody>
+      </table>
+    </div>
+    <p class="note">順位は<b>最高点</b>で決めます（ドリルごと）。自分の行は色が付きます。</p>
+  </section>
+
+  <section class="card">
+    <h2>3. マイページ（感度ごとの平均で判定）</h2>
+    <div class="row">
+      <label>見る人<select id="who"></select></label>
+      <label>ドリル<select id="myDrill"><option>Hexakill</option><option>Static Switching</option><option>Horizontal Smoothness</option></select></label>
+    </div>
+    <div class="chart" id="chart"></div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th class="l">感度</th><th>回数</th><th>平均</th><th>最高</th><th>最低</th><th>サドンに戻すと</th></tr></thead>
+        <tbody id="sum"></tbody>
+      </table>
+    </div>
+    <div class="verdict" id="verdict">記録が入ると、ここに判定が出ます。</div>
+    <p class="note">判定は<b>平均</b>で決めます（まぐれの 1 回に引っ張られないため）。平均の差が 5% 以内なら「差なし」。各感度 3 回以上入れると判定が安定します。</p>
+    <h3>記録の一覧</h3>
+    <div class="runs" id="runs"></div>
+  </section>
+
+  <p class="note">式：Aiming.Pro の感度 ＝ サドンの感度 × 0.03（mouse-sensitivity.com で「Sudden Attack Zero Point」を選んで検算、2026-10-08）。サドンに戻す時は ÷ 0.03。</p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// 記録置き場（Google Apps Script のウェブアプリ）。空のままだと、この端末の中だけに記録します。
+var API_URL = '';
+
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var KEY='saz-aim-rank-v1';
+  var DRILLS=['Hexakill','Static Switching','Horizontal Smoothness'];
+  var local={name:'',saz:7,cands:[0.17,0.21,0.25],pick:1,token:'',rankTab:'Hexakill',rows:[]}; // rows はサーバーが無い時だけ使う
+  var rows=[];   // サーバーから来た全記録 {id,ts,name,drill,sens,saz,score,tk}
+  var online=!!API_URL;
+
+  function r(n,d){return isFinite(n)?(Math.round(n*Math.pow(10,d))/Math.pow(10,d)):NaN;}
+  function fmt(n,d){return isFinite(n)?r(n,d).toString():'–';}
+  function toast(m){var t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2000);}
+  function status(m,err){var s=$('status');s.textContent=m;s.className='status'+(err?' err':'');}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(local));}catch(e){}}
+  function load(){try{var o=JSON.parse(localStorage.getItem(KEY)||'null');if(o)for(var k in o)local[k]=o[k];}catch(e){} if(!local.token){local.token=Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,6);save();}}
+  function makeCands(){var c=r((parseFloat($('saz').value)||7)*0.03,3);local.cands=[r(c*0.8,2),r(c,2),r(c*1.2,2)];local.pick=1;}
+
+  // ---- サーバー ----
+  function fetchRows(){
+    if(!online){rows=local.rows||[];status('記録置き場が未設定なので、この端末の中だけに記録しています。');renderAll();return;}
+    status('記録を読み込み中…');
+    fetch(API_URL+'?action=list&_='+Date.now(),{method:'GET',redirect:'follow'}).then(function(res){return res.json();}).then(function(j){
+      if(!j.ok) throw new Error(j.error||'bad');
+      rows=j.rows||[]; status('記録 '+rows.length+' 件（'+new Date().toLocaleTimeString('ja-JP')+' に読み込み）'); renderAll();
+    }).catch(function(e){status('記録置き場につながりませんでした（'+e.message+'）。しばらくして読み直してください。',true);renderAll();});
+  }
+  function post(body){
+    return fetch(API_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}).then(function(res){return res.json();});
+  }
+
+  // ---- 集計 ----
+  function myName(){return (local.name||'').trim();}
+  function stats(list){var a=list.map(function(x){return x.score;});if(!a.length)return{n:0};var sum=a.reduce(function(p,q){return p+q;},0);return{n:a.length,avg:sum/a.length,max:Math.max.apply(null,a),min:Math.min.apply(null,a)};}
+  function names(){var m={};rows.forEach(function(x){m[x.name]=1;});var a=Object.keys(m);var me=myName();if(me&&!m[me])a.push(me);a.sort(function(p,q){return p===me?-1:q===me?1:p.localeCompare(q,'ja');});return a;}
+
+  // ---- 描画 ----
+  function renderPick(){
+    var pl=$('pickList');pl.innerHTML='';
+    local.cands.forEach(function(s,i){
+      var mine=rows.filter(function(x){return x.name===myName()&&x.drill===$('drill').value&&x.sens===s;}).length;
+      var b=document.createElement('button');b.className=(local.pick===i?'on':'');b.innerHTML=fmt(s,2)+'<span class="s">サドン '+fmt(s/0.03,1)+' ・ '+mine+' 回</span>';
+      b.addEventListener('click',function(){local.pick=i;save();renderPick();$('score').focus();});
+      pl.appendChild(b);
+    });
+  }
+  function renderRank(){
+    var tabs=$('rankTabs');tabs.innerHTML='';
+    DRILLS.forEach(function(d){var b=document.createElement('button');b.textContent=d;b.className=(local.rankTab===d?'on':'');b.addEventListener('click',function(){local.rankTab=d;save();renderRank();});tabs.appendChild(b);});
+    var by={};rows.filter(function(x){return x.drill===local.rankTab;}).forEach(function(x){(by[x.name]=by[x.name]||[]).push(x);});
+    var list=Object.keys(by).map(function(n){var l=by[n];var best=l.reduce(function(p,q){return q.score>p.score?q:p;},l[0]);var s=stats(l);return{name:n,best:best.score,sens:best.sens,avg:s.avg,n:s.n};});
+    list.sort(function(a,b){return b.best-a.best||b.avg-a.avg;});
+    var tb=$('rankBody');tb.innerHTML='';
+    if(!list.length){tb.innerHTML='<tr><td class="l" colspan="6">まだ記録がありません。最初の 1 人になってください。</td></tr>';return;}
+    list.forEach(function(x,i){
+      var tr=document.createElement('tr');if(x.name===myName())tr.className='me';
+      var rk=i<3?'<span class="medal m'+(i+1)+'">'+(i+1)+'</span>':(i+1);
+      tr.innerHTML='<td class="rank l">'+rk+'</td><td class="name">'+esc(x.name)+'</td><td><b>'+x.best+'</b></td><td>'+fmt(x.sens,2)+'</td><td>'+fmt(x.avg,1)+'</td><td>'+x.n+'</td>';
+      tb.appendChild(tr);
+    });
+  }
+  function renderWho(){
+    var sel=$('who');var cur=sel.value||myName();sel.innerHTML='';
+    names().forEach(function(n){var o=document.createElement('option');o.value=n;o.textContent=n+(n===myName()?'（自分）':'');sel.appendChild(o);});
+    if(cur&&[].some.call(sel.options,function(o){return o.value===cur;}))sel.value=cur;
+  }
+  function renderMy(){
+    var who=$('who').value||myName();var d=$('myDrill').value;
+    var mine=rows.filter(function(x){return x.name===who&&x.drill===d;});
+    var by={};mine.forEach(function(x){(by[x.sens]=by[x.sens]||[]).push(x);});
+    var sensList=Object.keys(by).map(Number).sort(function(a,b){return a-b;});
+    if(who===myName()){local.cands.forEach(function(s){if(sensList.indexOf(s)<0)sensList.push(s);});sensList.sort(function(a,b){return a-b;});}
+    var rowsS=sensList.map(function(s){return{sens:s,s:stats(by[s]||[])};});
+    var withData=rowsS.filter(function(x){return x.s.n>0;});
+    var bestAvg=withData.length?Math.max.apply(null,withData.map(function(x){return x.s.avg;})):0;
+    var ch=$('chart');ch.innerHTML='';
+    rowsS.forEach(function(x){var b=document.createElement('div');b.className='b'+(x.s.n&&x.s.avg===bestAvg&&withData.length>1?' win':'');b.innerHTML='<div class="k">'+fmt(x.sens,2)+'</div><div class="bar"><i style="width:'+(x.s.n?Math.round(x.s.avg/bestAvg*100):0)+'%"></i></div><div class="v">'+(x.s.n?fmt(x.s.avg,1):'–')+'</div>';ch.appendChild(b);});
+    var tb=$('sum');tb.innerHTML='';
+    rowsS.forEach(function(x){var tr=document.createElement('tr');if(x.s.n&&x.s.avg===bestAvg&&withData.length>1)tr.className='win';tr.innerHTML='<td class="l">'+fmt(x.sens,2)+'</td><td>'+x.s.n+'</td><td>'+fmt(x.s.avg,1)+'</td><td>'+(x.s.n?x.s.max:'–')+'</td><td>'+(x.s.n?x.s.min:'–')+'</td><td>'+fmt(x.sens/0.03,1)+'</td>';tb.appendChild(tr);});
+    var v=$('verdict');v.classList.remove('ok');
+    if(!who){v.textContent='上の 1 で名前を入れると、自分のページになります。';}
+    else if(withData.length<2){v.textContent=who+' さんの '+d+'：2 つ以上の感度に点が入ると判定が出ます。';}
+    else{
+      var sorted=withData.slice().sort(function(a,b){return b.s.avg-a.s.avg;});var top=sorted[0],second=sorted[1];
+      var gap=(top.s.avg-second.s.avg)/Math.max(top.s.avg,1);var few=withData.some(function(x){return x.s.n<3;});
+      var tail=few?'　各 3 回以上入れると判定が安定します。':'';
+      if(gap<0.05)v.textContent='判定：'+fmt(top.sens,2)+' と '+fmt(second.sens,2)+' の平均の差は '+fmt(gap*100,1)+'% で、ほぼ差なし。感度のせいではないので、今の感度のままで練習を。'+tail;
+      else v.textContent='判定：'+fmt(top.sens,2)+' が平均 '+fmt(top.s.avg,1)+' で一番良い（2 位 '+fmt(second.sens,2)+' より '+fmt(gap*100,1)+'% 上）。サドンの横の感度なら '+fmt(top.sens/0.03,1)+' あたり（÷0.03、整数に丸める）。縦も同じ比率で。'+tail;
+      v.classList.add('ok');
+    }
+    var ru=$('runs');ru.innerHTML='';
+    rowsS.forEach(function(x){var list=(by[x.sens]||[]).slice().sort(function(a,b){return a.ts-b.ts;});if(!list.length)return;var dv=document.createElement('div');dv.className='r';var t=document.createElement('b');t.textContent=fmt(x.sens,2);dv.appendChild(t);
+      list.forEach(function(run){var ch=document.createElement('span');ch.className='chip';ch.textContent=run.score;ch.title=new Date(run.ts).toLocaleString('ja-JP');
+        if(run.tk===local.token.slice(0,4)){var del=document.createElement('button');del.textContent='×';del.setAttribute('aria-label','この点を消す');del.addEventListener('click',function(){delRun(run);});ch.appendChild(del);}
+        dv.appendChild(ch);});
+      ru.appendChild(dv);});
+    if(!mine.length){ru.innerHTML='<div class="note">まだ記録がありません。</div>';}
+  }
+  function renderAll(){renderPick();renderRank();renderWho();renderMy();}
+
+  // ---- 操作 ----
+  function addRun(){
+    var name=myName();if(!name){toast('名前を入れてください');$('name').focus();return;}
+    var score=parseFloat($('score').value);if(!isFinite(score)||score<0){toast('点を入れてください');return;}
+    var row={name:name,drill:$('drill').value,sens:local.cands[local.pick],saz:parseFloat($('saz').value)||null,score:score,token:local.token};
+    $('add').disabled=true;
+    if(!online){row.id=Math.random().toString(36).slice(2,10);row.ts=Date.now();row.tk=local.token.slice(0,4);local.rows=(local.rows||[]).concat([row]);save();rows=local.rows;$('score').value='';$('add').disabled=false;renderAll();toast('この端末に記録しました');return;}
+    post({action:'add',row:row}).then(function(j){
+      if(!j.ok)throw new Error(j.error||'bad');
+      rows.push({id:j.id,ts:j.ts,name:row.name,drill:row.drill,sens:row.sens,saz:row.saz,score:row.score,tk:local.token.slice(0,4)});
+      $('score').value='';toast('保存しました');renderAll();
+    }).catch(function(e){toast('保存できませんでした：'+e.message);}).then(function(){$('add').disabled=false;$('score').focus();});
+  }
+  function delRun(run){
+    if(!window.confirm('この点（'+run.score+'）を消します。いいですか？'))return;
+    if(!online){local.rows=(local.rows||[]).filter(function(x){return x.id!==run.id;});save();rows=local.rows;renderAll();return;}
+    post({action:'delete',id:run.id,token:local.token}).then(function(j){if(!j.ok)throw new Error(j.error||'bad');rows=rows.filter(function(x){return x.id!==run.id;});renderAll();toast('消しました');}).catch(function(e){toast('消せませんでした：'+e.message);});
+  }
+
+  $('name').addEventListener('input',function(){local.name=$('name').value;save();renderAll();});
+  $('saz').addEventListener('change',function(){local.saz=parseFloat($('saz').value)||local.saz;makeCands();save();renderAll();});
+  $('drill').addEventListener('change',function(){renderPick();});
+  $('resetCand').addEventListener('click',function(){makeCands();save();renderAll();toast('候補を作り直しました');});
+  $('editCand').addEventListener('click',function(){var s=window.prompt('比べる感度を「,」区切りで（例 0.17,0.21,0.25）',local.cands.join(','));if(s==null)return;var a=s.split(/[,\s、]+/).map(parseFloat).filter(function(x){return isFinite(x)&&x>0;});if(a.length<2){toast('2 つ以上入れてください');return;}local.cands=a.map(function(x){return r(x,2);});local.pick=Math.min(local.pick,a.length-1);save();renderAll();});
+  $('add').addEventListener('click',addRun);
+  $('score').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();addRun();}});
+  $('who').addEventListener('change',renderMy);
+  $('myDrill').addEventListener('change',renderMy);
+
+  load();
+  $('name').value=local.name;$('saz').value=local.saz;
+  if(!local.cands||local.cands.length<2)makeCands();
+  fetchRows();
+})();
+</script>
+</body>
+</html>
