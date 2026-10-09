@@ -50,3 +50,9 @@
 
 ## Aiming.Pro の感度合わせ（2026-10-08）
 - サドンZP の感度を Aiming.Pro に持っていく説明書: `docs/aimingpro-sens/index.html`（本題は「感度が合っているかの確かめ方」＝今/2割下げ/2割上げを Benchmarks の Hexakill 1本で比べ（本人が試して「3本は面倒、1本で十分」と決めた 10-08）、表に点を入れると自動判定。3本版は補足。計算機と、トップページから押す所を赤枠で示したスクショ 15 手順（tools/annotate_aimingpro_shots.py で印を付ける）は後ろ。PDF は tools/export_aimingpro_pdf.py。Artifact として公開済み）。式は Aiming.Pro = サドン感度 × 0.03。本人の値は横 7・縦 10 → 0.21 / 0.3（Separate X/Y オン）。
+
+## 感度くらべ（aim/）の記録置き場 2026-10-09
+- 記録置き場は Google Apps Script のウェブアプリ（台本 aim/gas/Code.gs、スプレッドシート ID 1AmoGi0G_mCDFM9lszXgKgK9y4iFV0JKX1D7w63y5Umo「感度くらべ 記録」）。
+- Apps Script プロジェクト: https://script.google.com/home/projects/1lqHS0JvDN-oZpRcaRHxfHbgZstUtHCsvbWAirMnymxBtY5Z0WS9wrIiq/edit （台本は貼り付け・保存済み。「新しいデプロイ」→ウェブアプリ・自分として実行・全員 まで設定済み）。
+- 10-09 15:00 承認・デプロイ済み（バージョン 1）。ウェブアプリ URL は aim/index.html の API_URL に入れてある。台本を直したら Apps Script 側で「デプロイを管理」→ 新バージョンで出し直す（URL は変わらない）。curl の POST は 302 の後 GET になるが書き込みは済む。シェルから日本語を送ると化けるのでテストはブラウザから。
+- 公開先: https://zaikotan1-oss.github.io/saz-board/aim/ （記録ページ）、.../aim/guide.html（説明書）。API_URL が空の間は端末内だけに記録する。
