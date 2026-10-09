@@ -99,7 +99,7 @@ a{color:var(--accent)}
       <li>「みんなのランキング」に最高点で順位が出ます。ドリルの名前を押すと切り替わります。</li>
       <li>「マイページ」で自分の名前を選ぶと、<b>やった感度が全部</b>並び、感度ごとの平均と「どの感度が合っているか」の判定が出ます。他の人の名前を選べば、その人のページも見られます。</li>
     </ol>
-    <p class="note">Static Switching と Horizontal Smoothness は任意です。やった時はドリルの欄を切り替えて同じように保存してください。自分の点を消したい時は、マイページの一覧で点の横の × を押します（自分の端末から入れた物だけ消せます）。</p>
+    <p class="note">Static Switching と Horizontal Smoothness は任意です。やった時はドリルの欄を切り替えて同じように保存してください。自分の点を消したい時は、マイページの一覧で点の横の × を押します。まとめて消すなら一覧の下の「自分の記録を全部消す」。どちらも 2 回確認が出ます（自分の端末から入れた物だけ消せます）。</p>
   </section>
 
   <section class="card main">
@@ -152,6 +152,8 @@ a{color:var(--accent)}
     <p class="note">判定は<b>平均</b>で決めます（まぐれの 1 回に引っ張られないため）。平均の差が 5% 以内なら「差なし」。各感度 3 回以上入れると判定が安定します。</p>
     <h3>記録の一覧</h3>
     <div class="runs" id="runs"></div>
+    <div class="actions"><button class="small danger" id="delAll">自分の記録を全部消す（このドリル）</button></div>
+    <p class="note" id="delNote">消せるのは、この端末から入れた自分の記録だけです。</p>
   </section>
 
   <p class="note">式：Aiming.Pro の感度 ＝ サドンの感度 × 0.03（mouse-sensitivity.com で「Sudden Attack Zero Point」を選んで検算、2026-10-08）。サドンに戻す時は ÷ 0.03。</p>
@@ -179,16 +181,26 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
   function load(){try{var o=JSON.parse(localStorage.getItem(KEY)||'null');if(o)for(var k in o)local[k]=o[k];}catch(e){} if(!local.token){local.token=Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,6);save();}}
 
   // ---- サーバー ----
+  // Apps Script は起動直後や混んでいる時に JSON でなく HTML を返すことがあるので、3 回まで取り直す
+  function fetchJson(url,opts,tries){
+    tries=tries||0;
+    return fetch(url,opts).then(function(res){return res.text();}).then(function(t){
+      try{return JSON.parse(t);}catch(e){throw new Error('not json');}
+    }).catch(function(e){
+      if(tries<2) return new Promise(function(r){setTimeout(r,1500*(tries+1));}).then(function(){return fetchJson(url,opts,tries+1);});
+      throw e;
+    });
+  }
   function fetchRows(){
     if(!online){rows=local.rows||[];status('記録置き場が未設定なので、この端末の中だけに記録しています。');renderAll();return;}
     status('記録を読み込み中…（最初は 10 秒ほどかかります）');
-    fetch(API_URL+'?action=list&_='+Date.now(),{method:'GET',redirect:'follow'}).then(function(res){return res.json();}).then(function(j){
+    fetchJson(API_URL+'?action=list&_='+Date.now(),{method:'GET',redirect:'follow'}).then(function(j){
       if(!j.ok) throw new Error(j.error||'bad');
       rows=j.rows||[]; status('記録 '+rows.length+' 件（'+new Date().toLocaleTimeString('ja-JP')+' に読み込み）'); renderAll();
-    }).catch(function(e){status('記録置き場につながりませんでした（'+e.message+'）。しばらくして読み直してください。',true);renderAll();});
+    }).catch(function(e){status('記録置き場につながりませんでした（'+e.message+'）。ページを読み直してください。',true);renderAll();});
   }
   function post(body){
-    return fetch(API_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}).then(function(res){return res.json();});
+    return fetchJson(API_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});
   }
 
   // ---- 集計 ----
@@ -265,6 +277,9 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
         dv.appendChild(ch);});
       ru.appendChild(dv);});
     if(!mine.length){ru.innerHTML='<div class="note">まだ記録がありません。</div>';}
+    var ownN=mine.filter(function(x){return x.tk===local.token.slice(0,4);}).length;
+    $('delAll').hidden=!(who===myName()&&ownN>0);
+    $('delNote').hidden=$('delAll').hidden;
   }
   function renderAll(){renderPick();renderRank();renderWho();renderMy();}
 
@@ -282,10 +297,15 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
       $('score').value='';toast('保存しました');renderAll();
     }).catch(function(e){toast('保存できませんでした：'+e.message);}).then(function(){$('add').disabled=false;$('score').focus();});
   }
+  function sure2(what){ if(!window.confirm(what+'\n\n本当にいいですか？')) return false; return window.confirm('マジで消えますよ。元に戻せません。\n\n本当にいいんですね？'); }
   function delRun(run){
-    if(!window.confirm('この点（'+run.score+'）を消します。いいですか？'))return;
+    if(!sure2('この点（'+run.score+'）を消します。'))return;
     if(!online){local.rows=(local.rows||[]).filter(function(x){return x.id!==run.id;});save();rows=local.rows;renderAll();return;}
-    post({action:'delete',id:run.id,token:local.token}).then(function(j){if(!j.ok)throw new Error(j.error||'bad');rows=rows.filter(function(x){return x.id!==run.id;});renderAll();toast('消しました');}).catch(function(e){toast('消せませんでした：'+e.message);});
+    var tries=0;
+    (function tryDel(){
+      tries++;
+      post({action:'delete',id:run.id,token:local.token}).then(function(j){if(!j.ok&&j.error!=='not found')throw new Error(j.error||'bad');rows=rows.filter(function(x){return x.id!==run.id;});renderAll();toast('消しました');}).catch(function(e){ if(tries<3) setTimeout(tryDel,1500); else toast('消せませんでした：'+e.message); });
+    })();
   }
 
   $('name').addEventListener('input',function(){local.name=$('name').value;save();renderAll();});
@@ -295,6 +315,27 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
   $('drill').addEventListener('change',function(){renderPick();});
   $('add').addEventListener('click',addRun);
   $('score').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();addRun();}});
+  $('delAll').addEventListener('click',function(){
+    var who=$('who').value||myName(), d=$('myDrill').value;
+    var mine=rows.filter(function(x){return x.name===who&&x.drill===d&&x.tk===local.token.slice(0,4);});
+    if(!mine.length){toast('この端末から入れた記録がありません');return;}
+    if(!sure2(who+' さんの '+d+' の記録 '+mine.length+' 件を全部消します。'))return;
+    $('delAll').disabled=true; toast('消しています…');
+    var done=0, fail=0;
+    (function next(){
+      if(!mine.length){$('delAll').disabled=false; toast(done+' 件消しました'+(fail?'（'+fail+' 件は消せず）':'')); renderAll(); return;}
+      var run=mine.shift();
+      if(!online){local.rows=(local.rows||[]).filter(function(x){return x.id!==run.id;});save();rows=local.rows;done++;next();return;}
+      var tries=0;
+      (function tryDel(){
+        tries++;
+        post({action:'delete',id:run.id,token:local.token}).then(function(j){
+          if(j.ok||j.error==='not found'){rows=rows.filter(function(x){return x.id!==run.id;});done++;next();}
+          else if(tries<3){setTimeout(tryDel,1500);} else {fail++;next();}
+        }).catch(function(){ if(tries<3) setTimeout(tryDel,1500); else {fail++;next();} });
+      })();
+    })();
+  });
   $('who').addEventListener('change',renderMy);
   $('myDrill').addEventListener('change',renderMy);
 
