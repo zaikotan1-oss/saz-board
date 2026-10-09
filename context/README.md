@@ -54,5 +54,5 @@
 ## 感度くらべ（aim/）の記録置き場 2026-10-09
 - 記録置き場は Google Apps Script のウェブアプリ（台本 aim/gas/Code.gs、スプレッドシート ID 1AmoGi0G_mCDFM9lszXgKgK9y4iFV0JKX1D7w63y5Umo「感度くらべ 記録」）。
 - Apps Script プロジェクト: https://script.google.com/home/projects/1lqHS0JvDN-oZpRcaRHxfHbgZstUtHCsvbWAirMnymxBtY5Z0WS9wrIiq/edit （台本は貼り付け・保存済み。「新しいデプロイ」→ウェブアプリ・自分として実行・全員 まで設定済み）。
-- 10-09 15:00 承認・デプロイ済み（バージョン 1）。ウェブアプリ URL は aim/index.html の API_URL に入れてある。台本を直したら Apps Script 側で「デプロイを管理」→ 新バージョンで出し直す（URL は変わらない）。curl の POST は 302 の後 GET になるが書き込みは済む。シェルから日本語を送ると化けるのでテストはブラウザから。
+- 10-09 15:00 承認・デプロイ済み（バージョン 1、15:11 に sazy 列を足したバージョン 2。URL 同じ）。ウェブアプリ URL は aim/index.html の API_URL に入れてある。台本を直したら Apps Script 側で「デプロイを管理」→ 新バージョンで出し直す（URL は変わらない）。curl の POST は 302 の後 GET になるが書き込みは済む。シェルから日本語を送ると化けるのでテストはブラウザから。
 - 公開先: https://zaikotan1-oss.github.io/saz-board/aim/ （記録ページ）、.../aim/guide.html（説明書）。API_URL が空の間は端末内だけに記録する。
