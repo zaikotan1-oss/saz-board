@@ -56,3 +56,5 @@
 - Apps Script プロジェクト: https://script.google.com/home/projects/1lqHS0JvDN-oZpRcaRHxfHbgZstUtHCsvbWAirMnymxBtY5Z0WS9wrIiq/edit （台本は貼り付け・保存済み。「新しいデプロイ」→ウェブアプリ・自分として実行・全員 まで設定済み）。
 - 10-09 15:00 承認・デプロイ済み（バージョン 1、15:11 に sazy 列を足したバージョン 2。URL 同じ）。ウェブアプリ URL は aim/index.html の API_URL に入れてある。台本を直したら Apps Script 側で「デプロイを管理」→ 新バージョンで出し直す（URL は変わらない）。curl の POST は 302 の後 GET になるが書き込みは済む。シェルから日本語を送ると化けるのでテストはブラウザから。
 - 公開先: https://zaikotan1-oss.github.io/saz-board/aim/ （記録ページ）、.../aim/guide.html（説明書）。API_URL が空の間は端末内だけに記録する。
+- 画面の並び（10-09 夕方）: 1 点を記録する（やった時の感度と点だけ。サドン換算は整数＋括弧で下に出る）→ 2 次の感度はどれにしますか（早見表。基準の横・縦、見出しのプルダウンで 10/5/3/1% 刻み、サドン値は整数で括弧に正確な換算。「これでやる」で 1 の欄に入る）→ 3 ランキング（最高点のみ）→ 4 マイページ（やった感度を全部・行ごとの「消す」は 2 回確認・自分の端末の記録だけ）。こうさくさんの「1.12 の縦が 31 になる」は、基準の縦をそのまま保存していたのが原因で、やった感度の換算を保存するよう直した。
+- 直したら `python tools/build_aim_pages.py` → `git add aim && git commit && git push`。手元の確認は launch.json の saz-aim（8847）。
