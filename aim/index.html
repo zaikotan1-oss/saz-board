@@ -93,7 +93,7 @@ a{color:var(--accent)}
   <section class="card">
     <h2>使い方</h2>
     <ol style="margin:0;padding-left:1.4em;display:grid;gap:4px">
-      <li><b>名前</b>を入れる（ランキングに出る名前。毎回同じ名前で）。サドンの横・縦の感度も入れると、Aiming.Pro の感度（×0.03）と、1 割・2 割上下の早押しボタンが出ます。</li>
+      <li><b>名前</b>を入れる（ランキングに出る名前。毎回同じ名前で）。ふだんのサドンの横・縦の感度（基準）も入れると、Aiming.Pro の感度（×0.03）と、1 割・2 割上下の早押しボタンが出ます。やった感度をサドンに直した値はその下に出ます。</li>
       <li>Aiming.Pro の設定を候補のどれかにして、<b>Hexakill を 1 分</b>やる（やり方は<a href="guide.html">説明書</a>）。</li>
       <li>戻ってきたら、<b>やった感度を入れて（早押しボタンでも手打ちでも）、点を入れて「保存」</b>。感度ごとに 3 回ずつが目安です。</li>
       <li>「みんなのランキング」に最高点で順位が出ます。ドリルの名前を押すと切り替わります。</li>
@@ -107,15 +107,16 @@ a{color:var(--accent)}
     <div class="row3">
       <label>名前（ランキングに出ます）<input id="name" type="text" maxlength="20" placeholder="例 ざいこ"></label>
       <label>ドリル<select id="drill"><option>Hexakill</option><option>Static Switching</option><option>Horizontal Smoothness</option></select></label>
-      <label>サドンの感度 横<input id="saz" type="number" inputmode="decimal" min="1" max="100" step="1" value="7"></label>
-      <label>サドンの感度 縦<input id="sazy" type="number" inputmode="decimal" min="1" max="100" step="1" value="10"></label>
+      <label>ふだんのサドンの感度 横（基準）<input id="saz" type="number" inputmode="decimal" min="1" max="100" step="1" value="7"></label>
+      <label>ふだんのサドンの感度 縦（基準）<input id="sazy" type="number" inputmode="decimal" min="1" max="100" step="1" value="10"></label>
     </div>
-    <p class="note">Aiming.Pro の感度は サドン × 0.03（横 7 → 0.21、縦 10 → 0.3）。下の欄に<b>今やった Aiming.Pro の横の感度</b>を入れます。早押しボタンは今の感度の 1 割・2 割の上下です。1 割でも 3 割でも、やった感度はそのまま入れて構いません。</p>
+    <p class="note">上の 2 つは「ふだんの感度」で、早押しボタンの元になる基準です（Aiming.Pro の感度 ＝ サドン × 0.03。横 7 → 0.21、縦 10 → 0.3）。下の欄に<b>今やった Aiming.Pro の横の感度</b>を入れます。早押しボタンは基準の 1 割・2 割の上下です。1 割でも 3 割でも、やった感度はそのまま入れて構いません。</p>
     <div class="sensbtns" id="pickList"></div>
     <div class="row">
       <label>今やった Aiming.Pro の感度（横）<input id="sens" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="例 0.21"></label>
-      <label>その時の縦（参考。横と同じ比率）<input id="sensy" type="number" inputmode="decimal" min="0.01" step="0.01" readonly></label>
+      <label>その時の Aiming.Pro の縦（横と同じ比率）<input id="sensy" type="number" inputmode="decimal" min="0.01" step="0.01" readonly></label>
     </div>
+    <div class="verdict" id="equiv">この感度をサドンに直すと…</div>
     <div class="entry">
       <label>今回の点（Score）<input id="score" type="number" inputmode="numeric" min="0" placeholder="例 76"></label>
       <button class="primary" id="add">保存</button>
@@ -215,7 +216,8 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
   // ---- 描画 ----
   function curSens(){return r((parseFloat($('saz').value)||7)*0.03,3);}
   function ratioY(){var x=parseFloat($('saz').value)||7,y=parseFloat($('sazy').value)||x;return y/x;}
-  function syncY(){var v=parseFloat($('sens').value);$('sensy').value=isFinite(v)?fmt(r(v*ratioY(),3),3):'';}
+  function syncY(){var v=parseFloat($('sens').value);var ok=isFinite(v)&&v>0;$('sensy').value=ok?fmt(r(v*ratioY(),3),3):'';
+    $('equiv').textContent=ok?('この感度をサドンに直すと 横 '+fmt(v/0.03,1)+' ・ 縦 '+fmt(v*ratioY()/0.03,1)+'（基準の横 '+(parseFloat($('saz').value)||7)+' に対して '+fmt((v/curSens()-1)*100,0)+'%）'):'やった感度を入れると、サドンに直した値がここに出ます。';}
   function renderPick(){
     var pl=$('pickList');pl.innerHTML='';
     var c=curSens();
@@ -292,7 +294,7 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
     var name=myName();if(!name){toast('名前を入れてください');$('name').focus();return;}
     var score=parseFloat($('score').value);if(!isFinite(score)||score<0){toast('点を入れてください');return;}
     var sens=parseFloat($('sens').value);if(!isFinite(sens)||sens<=0){toast('やった感度を入れてください');$('sens').focus();return;}sens=r(sens,2);
-    var row={name:name,drill:$('drill').value,sens:sens,saz:parseFloat($('saz').value)||null,sazy:parseFloat($('sazy').value)||null,score:score,token:local.token};
+    var row={name:name,drill:$('drill').value,sens:sens,saz:r(sens/0.03,1),sazy:r(sens*ratioY()/0.03,1),score:score,token:local.token};
     $('add').disabled=true;
     if(!online){row.id=Math.random().toString(36).slice(2,10);row.ts=Date.now();row.tk=local.token.slice(0,4);local.rows=(local.rows||[]).concat([row]);save();rows=local.rows;$('score').value='';$('add').disabled=false;renderAll();toast('この端末に記録しました');return;}
     post({action:'add',row:row}).then(function(j){
