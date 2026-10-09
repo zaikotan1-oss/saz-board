@@ -335,7 +335,7 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
 
   $('name').addEventListener('input',function(){local.name=$('name').value;save();renderAll();});
   $('saz').addEventListener('change',function(){local.saz=parseFloat($('saz').value)||local.saz;$('sens').value=fmt(curSens(),2);local.sens=curSens();save();renderAll();});
-  $('sazy').addEventListener('change',function(){local.sazy=parseFloat($('sazy').value)||local.sazy;save();syncY();});
+  $('sazy').addEventListener('change',function(){local.sazy=parseFloat($('sazy').value)||local.sazy;save();renderPick();});
   $('sens').addEventListener('input',function(){local.sens=parseFloat($('sens').value);save();syncY();renderPick();});
   $('drill').addEventListener('change',function(){renderPick();});
   $('add').addEventListener('click',addRun);
