@@ -99,7 +99,7 @@ a{color:var(--accent)}
       <li>「みんなのランキング」に最高点で順位が出ます。ドリルの名前を押すと切り替わります。</li>
       <li>「マイページ」で自分の名前を選ぶと、<b>やった感度が全部</b>並び、感度ごとの平均と「どの感度が合っているか」の判定が出ます。他の人の名前を選べば、その人のページも見られます。</li>
     </ol>
-    <p class="note">Static Switching と Horizontal Smoothness は任意です。やった時はドリルの欄を切り替えて同じように保存してください。自分の点を消したい時は、マイページの一覧で点の横の × を押します。まとめて消すなら一覧の下の「自分の記録を全部消す」。どちらも 2 回確認が出ます（自分の端末から入れた物だけ消せます）。</p>
+    <p class="note">Static Switching と Horizontal Smoothness は任意です。やった時はドリルの欄を切り替えて同じように保存してください。自分の記録を消したい時は、マイページの一覧でその行の「消す」を押します。2 回確認してから、その 1 件だけ消えます（自分の端末から入れた物だけ消せます）。</p>
   </section>
 
   <section class="card main">
@@ -150,10 +150,14 @@ a{color:var(--accent)}
     </div>
     <div class="verdict" id="verdict">記録が入ると、ここに判定が出ます。</div>
     <p class="note">判定は<b>平均</b>で決めます（まぐれの 1 回に引っ張られないため）。平均の差が 5% 以内なら「差なし」。各感度 3 回以上入れると判定が安定します。</p>
-    <h3>記録の一覧</h3>
-    <div class="runs" id="runs"></div>
-    <div class="actions"><button class="small danger" id="delAll">自分の記録を全部消す（このドリル）</button></div>
-    <p class="note" id="delNote">消せるのは、この端末から入れた自分の記録だけです。</p>
+    <h3>記録の一覧（新しい順）</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th class="l">日時</th><th>感度（横）</th><th>点</th><th class="l">消す</th></tr></thead>
+        <tbody id="runs"></tbody>
+      </table>
+    </div>
+    <p class="note">「消す」は自分の端末から入れた記録にだけ出ます。押すと 2 回確認してから、その 1 件だけ消します。</p>
   </section>
 
   <p class="note">式：Aiming.Pro の感度 ＝ サドンの感度 × 0.03（mouse-sensitivity.com で「Sudden Attack Zero Point」を選んで検算、2026-10-08）。サドンに戻す時は ÷ 0.03。</p>
@@ -193,7 +197,7 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
   }
   function fetchRows(){
     if(!online){rows=local.rows||[];status('記録置き場が未設定なので、この端末の中だけに記録しています。');renderAll();return;}
-    status('記録を読み込み中…（最初は 10 秒ほどかかります）');
+    if(!rows.length) status('記録を読み込み中…（最初は 10 秒ほどかかります）');
     fetchJson(API_URL+'?action=list&_='+Date.now(),{method:'GET',redirect:'follow'}).then(function(j){
       if(!j.ok) throw new Error(j.error||'bad');
       rows=j.rows||[]; status('記録 '+rows.length+' 件（'+new Date().toLocaleTimeString('ja-JP')+' に読み込み）'); renderAll();
@@ -271,15 +275,15 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
       v.classList.add('ok');
     }
     var ru=$('runs');ru.innerHTML='';
-    rowsS.forEach(function(x){var list=(by[x.sens]||[]).slice().sort(function(a,b){return a.ts-b.ts;});if(!list.length)return;var dv=document.createElement('div');dv.className='r';var t=document.createElement('b');t.textContent=fmt(x.sens,2);dv.appendChild(t);
-      list.forEach(function(run){var ch=document.createElement('span');ch.className='chip';ch.textContent=run.score;ch.title=new Date(run.ts).toLocaleString('ja-JP');
-        if(run.tk===local.token.slice(0,4)){var del=document.createElement('button');del.textContent='×';del.setAttribute('aria-label','この点を消す');del.addEventListener('click',function(){delRun(run);});ch.appendChild(del);}
-        dv.appendChild(ch);});
-      ru.appendChild(dv);});
-    if(!mine.length){ru.innerHTML='<div class="note">まだ記録がありません。</div>';}
-    var ownN=mine.filter(function(x){return x.tk===local.token.slice(0,4);}).length;
-    $('delAll').hidden=!(who===myName()&&ownN>0);
-    $('delNote').hidden=$('delAll').hidden;
+    mine.slice().sort(function(a,b){return b.ts-a.ts;}).forEach(function(run){
+      var tr=document.createElement('tr');
+      var own=(run.tk===local.token.slice(0,4));
+      var ds=dstr(run.ts);
+      tr.innerHTML='<td class="l">'+ds+'</td><td>'+fmt(run.sens,2)+'</td><td><b>'+run.score+'</b></td><td class="l"></td>';
+      if(own){var bt=document.createElement('button');bt.className='small danger';bt.textContent='消す';bt.addEventListener('click',function(){delRun(run);});tr.lastChild.appendChild(bt);}
+      ru.appendChild(tr);
+    });
+    if(!mine.length){ru.innerHTML='<tr><td class="l" colspan="4">まだ記録がありません。</td></tr>';}
   }
   function renderAll(){renderPick();renderRank();renderWho();renderMy();}
 
@@ -293,18 +297,20 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
     if(!online){row.id=Math.random().toString(36).slice(2,10);row.ts=Date.now();row.tk=local.token.slice(0,4);local.rows=(local.rows||[]).concat([row]);save();rows=local.rows;$('score').value='';$('add').disabled=false;renderAll();toast('この端末に記録しました');return;}
     post({action:'add',row:row}).then(function(j){
       if(!j.ok)throw new Error(j.error||'bad');
-      rows.push({id:j.id,ts:j.ts,name:row.name,drill:row.drill,sens:row.sens,saz:row.saz,sazy:row.sazy,score:row.score,tk:local.token.slice(0,4)});
+      rows.push({id:j.id||('tmp'+Date.now()),ts:j.ts||Date.now(),name:row.name,drill:row.drill,sens:row.sens,saz:row.saz,sazy:row.sazy,score:row.score,tk:local.token.slice(0,4)});
       $('score').value='';toast('保存しました');renderAll();
+      setTimeout(fetchRows,1500);
     }).catch(function(e){toast('保存できませんでした：'+e.message);}).then(function(){$('add').disabled=false;$('score').focus();});
   }
+  function dstr(ts){var dt=new Date(Number(ts));if(!isFinite(dt.getTime()))return '–';return (dt.getMonth()+1)+'/'+dt.getDate()+' '+('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);}
   function sure2(what){ if(!window.confirm(what+'\n\n本当にいいですか？')) return false; return window.confirm('マジで消えますよ。元に戻せません。\n\n本当にいいんですね？'); }
   function delRun(run){
-    if(!sure2('この点（'+run.score+'）を消します。'))return;
+    if(!sure2(dstr(run.ts)+' の 感度 '+fmt(run.sens,2)+' ・ '+run.score+' 点 の記録を 1 件消します。'))return;
     if(!online){local.rows=(local.rows||[]).filter(function(x){return x.id!==run.id;});save();rows=local.rows;renderAll();return;}
     var tries=0;
     (function tryDel(){
       tries++;
-      post({action:'delete',id:run.id,token:local.token}).then(function(j){if(!j.ok&&j.error!=='not found')throw new Error(j.error||'bad');rows=rows.filter(function(x){return x.id!==run.id;});renderAll();toast('消しました');}).catch(function(e){ if(tries<3) setTimeout(tryDel,1500); else toast('消せませんでした：'+e.message); });
+      post({action:'delete',id:run.id,token:local.token}).then(function(j){if(!j.ok&&j.error!=='not found')throw new Error(j.error||'bad');rows=rows.filter(function(x){return x.id!==run.id;});renderAll();toast('消しました');setTimeout(fetchRows,1500);}).catch(function(e){ if(tries<3) setTimeout(tryDel,1500); else toast('消せませんでした：'+e.message); });
     })();
   }
 
@@ -315,27 +321,6 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
   $('drill').addEventListener('change',function(){renderPick();});
   $('add').addEventListener('click',addRun);
   $('score').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();addRun();}});
-  $('delAll').addEventListener('click',function(){
-    var who=$('who').value||myName(), d=$('myDrill').value;
-    var mine=rows.filter(function(x){return x.name===who&&x.drill===d&&x.tk===local.token.slice(0,4);});
-    if(!mine.length){toast('この端末から入れた記録がありません');return;}
-    if(!sure2(who+' さんの '+d+' の記録 '+mine.length+' 件を全部消します。'))return;
-    $('delAll').disabled=true; toast('消しています…');
-    var done=0, fail=0;
-    (function next(){
-      if(!mine.length){$('delAll').disabled=false; toast(done+' 件消しました'+(fail?'（'+fail+' 件は消せず）':'')); renderAll(); return;}
-      var run=mine.shift();
-      if(!online){local.rows=(local.rows||[]).filter(function(x){return x.id!==run.id;});save();rows=local.rows;done++;next();return;}
-      var tries=0;
-      (function tryDel(){
-        tries++;
-        post({action:'delete',id:run.id,token:local.token}).then(function(j){
-          if(j.ok||j.error==='not found'){rows=rows.filter(function(x){return x.id!==run.id;});done++;next();}
-          else if(tries<3){setTimeout(tryDel,1500);} else {fail++;next();}
-        }).catch(function(){ if(tries<3) setTimeout(tryDel,1500); else {fail++;next();} });
-      })();
-    })();
-  });
   $('who').addEventListener('change',renderMy);
   $('myDrill').addEventListener('change',renderMy);
 
