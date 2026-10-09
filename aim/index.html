@@ -93,11 +93,11 @@ a{color:var(--accent)}
   <section class="card">
     <h2>使い方</h2>
     <ol style="margin:0;padding-left:1.4em;display:grid;gap:4px">
-      <li><b>名前</b>を入れる（ランキングに出る名前。毎回同じ名前で）。サドンの横の感度も入れると、Aiming.Pro の感度の候補が 3 つ（今・2 割下げ・2 割上げ）できます。</li>
+      <li><b>名前</b>を入れる（ランキングに出る名前。毎回同じ名前で）。サドンの横・縦の感度も入れると、Aiming.Pro の感度（×0.03）と、1 割・2 割上下の早押しボタンが出ます。</li>
       <li>Aiming.Pro の設定を候補のどれかにして、<b>Hexakill を 1 分</b>やる（やり方は<a href="guide.html">説明書</a>）。</li>
-      <li>戻ってきたら、<b>やった感度のボタンを押してから点を入れて「保存」</b>。感度ごとに 3 回ずつが目安です。</li>
+      <li>戻ってきたら、<b>やった感度を入れて（早押しボタンでも手打ちでも）、点を入れて「保存」</b>。感度ごとに 3 回ずつが目安です。</li>
       <li>「みんなのランキング」に最高点で順位が出ます。ドリルの名前を押すと切り替わります。</li>
-      <li>「マイページ」で自分の名前を選ぶと、感度ごとの平均と「どの感度が合っているか」の判定が出ます。他の人の名前を選べば、その人のページも見られます。</li>
+      <li>「マイページ」で自分の名前を選ぶと、<b>やった感度が全部</b>並び、感度ごとの平均と「どの感度が合っているか」の判定が出ます。他の人の名前を選べば、その人のページも見られます。</li>
     </ol>
     <p class="note">Static Switching と Horizontal Smoothness は任意です。やった時はドリルの欄を切り替えて同じように保存してください。自分の点を消したい時は、マイページの一覧で点の横の × を押します（自分の端末から入れた物だけ消せます）。</p>
   </section>
@@ -107,19 +107,20 @@ a{color:var(--accent)}
     <div class="row3">
       <label>名前（ランキングに出ます）<input id="name" type="text" maxlength="20" placeholder="例 ざいこ"></label>
       <label>ドリル<select id="drill"><option>Hexakill</option><option>Static Switching</option><option>Horizontal Smoothness</option></select></label>
-      <label>サドンの横の感度<input id="saz" type="number" inputmode="decimal" min="1" max="100" step="1" value="7"></label>
+      <label>サドンの感度 横<input id="saz" type="number" inputmode="decimal" min="1" max="100" step="1" value="7"></label>
+      <label>サドンの感度 縦<input id="sazy" type="number" inputmode="decimal" min="1" max="100" step="1" value="10"></label>
     </div>
-    <p class="note">Aiming.Pro の感度（サドン × 0.03）。比べる候補は 3 つ。数字は直せます。今やった感度を押してから点を入れてください。</p>
+    <p class="note">Aiming.Pro の感度は サドン × 0.03（横 7 → 0.21、縦 10 → 0.3）。下の欄に<b>今やった Aiming.Pro の横の感度</b>を入れます。早押しボタンは今の感度の 1 割・2 割の上下です。1 割でも 3 割でも、やった感度はそのまま入れて構いません。</p>
     <div class="sensbtns" id="pickList"></div>
     <div class="row">
-      <button class="small" id="resetCand">サドンの感度から ±20% で候補を作り直す</button>
-      <button class="small" id="editCand">候補の数字を直す</button>
+      <label>今やった Aiming.Pro の感度（横）<input id="sens" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="例 0.21"></label>
+      <label>その時の縦（参考。横と同じ比率）<input id="sensy" type="number" inputmode="decimal" min="0.01" step="0.01" readonly></label>
     </div>
     <div class="entry">
       <label>今回の点（Score）<input id="score" type="number" inputmode="numeric" min="0" placeholder="例 76"></label>
       <button class="primary" id="add">保存</button>
     </div>
-    <p class="note">保存すると、みんなの記録置き場（Google スプレッドシート）に名前・ドリル・感度・点が入ります。消せるのは自分の端末から入れた物だけです。</p>
+    <p class="note">保存すると、みんなの記録置き場（Google スプレッドシート）に名前・ドリル・感度（横・縦・サドンの値）・点が入ります。記録は消えずに貯まり続けます。消せるのは自分の端末から入れた点だけ（マイページの ×）。</p>
   </section>
 
   <section class="card">
@@ -143,7 +144,7 @@ a{color:var(--accent)}
     <div class="chart" id="chart"></div>
     <div class="tablewrap">
       <table>
-        <thead><tr><th class="l">感度</th><th>回数</th><th>平均</th><th>最高</th><th>最低</th><th>サドンに戻すと</th></tr></thead>
+        <thead><tr><th class="l">感度（横）</th><th>回数</th><th>平均</th><th>最高</th><th>最低</th><th>サドン 横</th><th>サドン 縦</th></tr></thead>
         <tbody id="sum"></tbody>
       </table>
     </div>
@@ -165,7 +166,7 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
   var $=function(id){return document.getElementById(id);};
   var KEY='saz-aim-rank-v1';
   var DRILLS=['Hexakill','Static Switching','Horizontal Smoothness'];
-  var local={name:'',saz:7,cands:[0.17,0.21,0.25],pick:1,token:'',rankTab:'Hexakill',rows:[]}; // rows はサーバーが無い時だけ使う
+  var local={name:'',saz:7,sazy:10,sens:0.21,token:'',rankTab:'Hexakill',rows:[]}; // rows はサーバーが無い時だけ使う
   var rows=[];   // サーバーから来た全記録 {id,ts,name,drill,sens,saz,score,tk}
   var online=!!API_URL;
 
@@ -176,7 +177,6 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function save(){try{localStorage.setItem(KEY,JSON.stringify(local));}catch(e){}}
   function load(){try{var o=JSON.parse(localStorage.getItem(KEY)||'null');if(o)for(var k in o)local[k]=o[k];}catch(e){} if(!local.token){local.token=Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,6);save();}}
-  function makeCands(){var c=r((parseFloat($('saz').value)||7)*0.03,3);local.cands=[r(c*0.8,2),r(c,2),r(c*1.2,2)];local.pick=1;}
 
   // ---- サーバー ----
   function fetchRows(){
@@ -197,14 +197,23 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
   function names(){var m={};rows.forEach(function(x){m[x.name]=1;});var a=Object.keys(m);var me=myName();if(me&&!m[me])a.push(me);a.sort(function(p,q){return p===me?-1:q===me?1:p.localeCompare(q,'ja');});return a;}
 
   // ---- 描画 ----
+  function curSens(){return r((parseFloat($('saz').value)||7)*0.03,3);}
+  function ratioY(){var x=parseFloat($('saz').value)||7,y=parseFloat($('sazy').value)||x;return y/x;}
+  function syncY(){var v=parseFloat($('sens').value);$('sensy').value=isFinite(v)?fmt(r(v*ratioY(),3),3):'';}
   function renderPick(){
     var pl=$('pickList');pl.innerHTML='';
-    local.cands.forEach(function(s,i){
-      var mine=rows.filter(function(x){return x.name===myName()&&x.drill===$('drill').value&&x.sens===s;}).length;
-      var b=document.createElement('button');b.className=(local.pick===i?'on':'');b.innerHTML=fmt(s,2)+'<span class="s">サドン '+fmt(s/0.03,1)+' ・ '+mine+' 回</span>';
-      b.addEventListener('click',function(){local.pick=i;save();renderPick();$('score').focus();});
-      pl.appendChild(b);
+    var c=curSens();
+    var quick=[{k:'-20%',v:r(c*0.8,2)},{k:'-10%',v:r(c*0.9,2)},{k:'今の感度',v:r(c,2)},{k:'+10%',v:r(c*1.1,2)},{k:'+20%',v:r(c*1.2,2)}];
+    var mine={};rows.forEach(function(x){if(x.name===myName()&&x.drill===$('drill').value)mine[x.sens]=(mine[x.sens]||0)+1;});
+    Object.keys(mine).map(Number).sort(function(p,q){return p-q;}).forEach(function(v){if(!quick.some(function(q){return q.v===v;}))quick.push({k:'やった',v:v});});
+    var now=parseFloat($('sens').value);
+    quick.forEach(function(q){
+      var n=mine[q.v]||0;
+      var btn=document.createElement('button');btn.className=(now===q.v?'on':'');btn.innerHTML=fmt(q.v,2)+'<span class="s">'+q.k+(n?' ・ '+n+' 回':'')+'</span>';
+      btn.addEventListener('click',function(){$('sens').value=fmt(q.v,2);local.sens=q.v;save();syncY();renderPick();$('score').focus();});
+      pl.appendChild(btn);
     });
+    syncY();
   }
   function renderRank(){
     var tabs=$('rankTabs');tabs.innerHTML='';
@@ -231,14 +240,13 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
     var mine=rows.filter(function(x){return x.name===who&&x.drill===d;});
     var by={};mine.forEach(function(x){(by[x.sens]=by[x.sens]||[]).push(x);});
     var sensList=Object.keys(by).map(Number).sort(function(a,b){return a-b;});
-    if(who===myName()){local.cands.forEach(function(s){if(sensList.indexOf(s)<0)sensList.push(s);});sensList.sort(function(a,b){return a-b;});}
     var rowsS=sensList.map(function(s){return{sens:s,s:stats(by[s]||[])};});
     var withData=rowsS.filter(function(x){return x.s.n>0;});
     var bestAvg=withData.length?Math.max.apply(null,withData.map(function(x){return x.s.avg;})):0;
     var ch=$('chart');ch.innerHTML='';
     rowsS.forEach(function(x){var b=document.createElement('div');b.className='b'+(x.s.n&&x.s.avg===bestAvg&&withData.length>1?' win':'');b.innerHTML='<div class="k">'+fmt(x.sens,2)+'</div><div class="bar"><i style="width:'+(x.s.n?Math.round(x.s.avg/bestAvg*100):0)+'%"></i></div><div class="v">'+(x.s.n?fmt(x.s.avg,1):'–')+'</div>';ch.appendChild(b);});
     var tb=$('sum');tb.innerHTML='';
-    rowsS.forEach(function(x){var tr=document.createElement('tr');if(x.s.n&&x.s.avg===bestAvg&&withData.length>1)tr.className='win';tr.innerHTML='<td class="l">'+fmt(x.sens,2)+'</td><td>'+x.s.n+'</td><td>'+fmt(x.s.avg,1)+'</td><td>'+(x.s.n?x.s.max:'–')+'</td><td>'+(x.s.n?x.s.min:'–')+'</td><td>'+fmt(x.sens/0.03,1)+'</td>';tb.appendChild(tr);});
+    rowsS.forEach(function(x){var tr=document.createElement('tr');if(x.s.n&&x.s.avg===bestAvg&&withData.length>1)tr.className='win';var yy=(by[x.sens]||[]).map(function(q){return q.sazy;}).filter(function(q){return isFinite(q)&&q>0;});var yv=yy.length?yy[yy.length-1]:NaN;tr.innerHTML='<td class="l">'+fmt(x.sens,2)+'</td><td>'+x.s.n+'</td><td>'+fmt(x.s.avg,1)+'</td><td>'+(x.s.n?x.s.max:'–')+'</td><td>'+(x.s.n?x.s.min:'–')+'</td><td>'+fmt(x.sens/0.03,1)+'</td><td>'+(isFinite(yv)?fmt(yv,1):'–')+'</td>';tb.appendChild(tr);});
     var v=$('verdict');v.classList.remove('ok');
     if(!who){v.textContent='上の 1 で名前を入れると、自分のページになります。';}
     else if(withData.length<2){v.textContent=who+' さんの '+d+'：2 つ以上の感度に点が入ると判定が出ます。';}
@@ -264,12 +272,13 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
   function addRun(){
     var name=myName();if(!name){toast('名前を入れてください');$('name').focus();return;}
     var score=parseFloat($('score').value);if(!isFinite(score)||score<0){toast('点を入れてください');return;}
-    var row={name:name,drill:$('drill').value,sens:local.cands[local.pick],saz:parseFloat($('saz').value)||null,score:score,token:local.token};
+    var sens=parseFloat($('sens').value);if(!isFinite(sens)||sens<=0){toast('やった感度を入れてください');$('sens').focus();return;}sens=r(sens,2);
+    var row={name:name,drill:$('drill').value,sens:sens,saz:parseFloat($('saz').value)||null,sazy:parseFloat($('sazy').value)||null,score:score,token:local.token};
     $('add').disabled=true;
     if(!online){row.id=Math.random().toString(36).slice(2,10);row.ts=Date.now();row.tk=local.token.slice(0,4);local.rows=(local.rows||[]).concat([row]);save();rows=local.rows;$('score').value='';$('add').disabled=false;renderAll();toast('この端末に記録しました');return;}
     post({action:'add',row:row}).then(function(j){
       if(!j.ok)throw new Error(j.error||'bad');
-      rows.push({id:j.id,ts:j.ts,name:row.name,drill:row.drill,sens:row.sens,saz:row.saz,score:row.score,tk:local.token.slice(0,4)});
+      rows.push({id:j.id,ts:j.ts,name:row.name,drill:row.drill,sens:row.sens,saz:row.saz,sazy:row.sazy,score:row.score,tk:local.token.slice(0,4)});
       $('score').value='';toast('保存しました');renderAll();
     }).catch(function(e){toast('保存できませんでした：'+e.message);}).then(function(){$('add').disabled=false;$('score').focus();});
   }
@@ -280,18 +289,17 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyACDf49rxVGPkc2lK5pX1DA_
   }
 
   $('name').addEventListener('input',function(){local.name=$('name').value;save();renderAll();});
-  $('saz').addEventListener('change',function(){local.saz=parseFloat($('saz').value)||local.saz;makeCands();save();renderAll();});
+  $('saz').addEventListener('change',function(){local.saz=parseFloat($('saz').value)||local.saz;$('sens').value=fmt(curSens(),2);local.sens=curSens();save();renderAll();});
+  $('sazy').addEventListener('change',function(){local.sazy=parseFloat($('sazy').value)||local.sazy;save();syncY();});
+  $('sens').addEventListener('input',function(){local.sens=parseFloat($('sens').value);save();syncY();renderPick();});
   $('drill').addEventListener('change',function(){renderPick();});
-  $('resetCand').addEventListener('click',function(){makeCands();save();renderAll();toast('候補を作り直しました');});
-  $('editCand').addEventListener('click',function(){var s=window.prompt('比べる感度を「,」区切りで（例 0.17,0.21,0.25）',local.cands.join(','));if(s==null)return;var a=s.split(/[,\s、]+/).map(parseFloat).filter(function(x){return isFinite(x)&&x>0;});if(a.length<2){toast('2 つ以上入れてください');return;}local.cands=a.map(function(x){return r(x,2);});local.pick=Math.min(local.pick,a.length-1);save();renderAll();});
   $('add').addEventListener('click',addRun);
   $('score').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();addRun();}});
   $('who').addEventListener('change',renderMy);
   $('myDrill').addEventListener('change',renderMy);
 
   load();
-  $('name').value=local.name;$('saz').value=local.saz;
-  if(!local.cands||local.cands.length<2)makeCands();
+  $('name').value=local.name;$('saz').value=local.saz;$('sazy').value=local.sazy||10;$('sens').value=isFinite(local.sens)&&local.sens>0?fmt(local.sens,2):fmt(curSens(),2);
   fetchRows();
 })();
 </script>
