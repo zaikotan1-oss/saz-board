@@ -69,3 +69,9 @@
 - 公開の置き場を作った（本人が「Firebase を作る」を選択）: Chrome（本人の Google ログイン）で Firebase プロジェクト `saz-board` を作成（規約の同意は本人がチェック）、Realtime Database をシンガポール（asia-southeast1）・ロックモードで作り、ルールを `saz/` の下だけ 読み=誰でも／書き=1 件ずつ（text・t・dev 必須、text 1000 字まで）に書き換えて公開。URL `https://saz-board-default-rtdb.asia-southeast1.firebasedatabase.app` を board-config.js に入れた。REST で読み・書き・検証（text 無しは拒否）・消しを確認、公開ページ（Pages）からも書けた。
 - ルールの編集画面は CodeMirror 6。`document.querySelector('.cm-content').cmView.view.dispatch({changes:{from:0,to:doc.length,insert}})` で中身を差し替えられる（type だと括弧の自動補完で崩れる）。
 - 残件: 俯瞰図の無いマップ（地下鉄・シティキャット等）は、本人がドロップした下地が本人のブラウザにしか無い。クランにも同じ絵を見せるなら、スクショを maps/ に入れて maps.json に登録する。
+
+## 2026-10-27 地下鉄・シティキャットの俯瞰図を探した（見つからず・保留）
+- 本人の希望: 俯瞰図の無いマップは「通路と部屋の幅の比率さえ合えばよい簡略図」（リアル不要、障害物はあれば）。材料は「ネットの資料」を選択。
+- 当たった所: suddenattackzero-news.jp の地下鉄・シティキャット記事（配置は未確認と明記・図なし）、namu.wiki（WebFetch と内蔵ブラウザは 403/拒否。検索結果の要約と tcatmon.com のミラーで本文は読めた。地下鉄は 2015-10-08 追加・経路がねじれて隠れ場所が多い・電車の屋根に乗れる。シティキャットは 2008 追加・日本風商店街・複雑）、hungryapp の地下鉄攻略（本文消失）、昔のネクソン案内画像 img.s.nx.com/.../map_img/N.jpg（死んでいる。Wayback に 1.jpg だけあり、中身はゲーム画面で俯瞰図ではない）、4gamer 2009 シティキャット記事（画面写真のみ）、公式 X の新旧比較（道具から開けない）。
+- 分かった事: ゲーム内に全体図がある。**T キーでミニマップが全体表示**、ルーム作成のマップ詳細に「展開図」（原作の案内）。マップトレーニングで入って撮れば下地になる。
+- 本人「今はやめる」→ 格子のまま。再開する時は上の T キー案から。
