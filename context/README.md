@@ -66,3 +66,6 @@
 - 検証メモ: 項目（datalist で既出を補完）・効く/効かない/不明・内容・名前。項目ごとにまとめて件数を出す。絞り込みチップ。
 - 公開の置き場（クランが書くのに必要）は未設定。候補は Firebase Realtime Database（無料・消えない・本人の Google アカウントで 1 回作る）。kvdb.io は 14 日の試用で不可、jsonblob は規約が読めず不採用、Artifact の db は claude.ai にログインした人しか書けないので不可。外部の置き場を私が勝手に作るのは auto モードで止められる（Real-World Transactions）ので本人の操作が要る。
 - 手元で試した: 地図に 1 件（スモーク・Aロング）→ 一覧と地図の印、エディターの地図にも出た。検証メモ 1 件 → 項目ごとの表示。試しのデータは消した。
+- 公開の置き場を作った（本人が「Firebase を作る」を選択）: Chrome（本人の Google ログイン）で Firebase プロジェクト `saz-board` を作成（規約の同意は本人がチェック）、Realtime Database をシンガポール（asia-southeast1）・ロックモードで作り、ルールを `saz/` の下だけ 読み=誰でも／書き=1 件ずつ（text・t・dev 必須、text 1000 字まで）に書き換えて公開。URL `https://saz-board-default-rtdb.asia-southeast1.firebasedatabase.app` を board-config.js に入れた。REST で読み・書き・検証（text 無しは拒否）・消しを確認、公開ページ（Pages）からも書けた。
+- ルールの編集画面は CodeMirror 6。`document.querySelector('.cm-content').cmView.view.dispatch({changes:{from:0,to:doc.length,insert}})` で中身を差し替えられる（type だと括弧の自動補完で崩れる）。
+- 残件: 俯瞰図の無いマップ（地下鉄・シティキャット等）は、本人がドロップした下地が本人のブラウザにしか無い。クランにも同じ絵を見せるなら、スクショを maps/ に入れて maps.json に登録する。
