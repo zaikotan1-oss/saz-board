@@ -17,20 +17,20 @@ window.SazStore = (() => {
   async function list(col) {
     const m = await detect();
     try {
-      if (m === 'firebase') { const r = await fetch(`${CFG.firebase}/${col}.json`); const o = (await r.json()) || {}; return Object.entries(o).map(([id, v]) => ({ ...v, id })).sort((a, b) => (a.t || 0) - (b.t || 0)); }
+      if (m === 'firebase') { const r = await fetch(`${CFG.firebase}/saz/${col}.json`); const o = (await r.json()) || {}; return Object.entries(o).map(([id, v]) => ({ ...v, id })).sort((a, b) => (a.t || 0) - (b.t || 0)); }
       if (m === 'local') { const r = await fetch(`${LOCAL}/kv?col=${col}&t=${Date.now()}`); return r.ok ? await r.json() : []; }
       const r = await fetch(`data/board/${col}.json?t=${Date.now()}`); return r.ok ? await r.json() : [];
     } catch (e) { return []; }
   }
   async function add(col, item) {
     const m = await detect(); item = { ...item, t: Date.now(), dev };
-    if (m === 'firebase') { const r = await fetch(`${CFG.firebase}/${col}.json`, { method: 'POST', body: JSON.stringify(item) }); if (!r.ok) throw new Error('save failed'); const { name } = await r.json(); return { ...item, id: name }; }
+    if (m === 'firebase') { const r = await fetch(`${CFG.firebase}/saz/${col}.json`, { method: 'POST', body: JSON.stringify(item) }); if (!r.ok) throw new Error('save failed'); const { name } = await r.json(); return { ...item, id: name }; }
     if (m === 'local') { item.id = newId(); const r = await fetch(`${LOCAL}/kv?col=${col}`, { method: 'POST', body: JSON.stringify(item) }); if (!r.ok) throw new Error('save failed'); return item; }
     throw new Error('readonly');
   }
   async function remove(col, id) {
     const m = await detect();
-    if (m === 'firebase') { const r = await fetch(`${CFG.firebase}/${col}/${id}.json`, { method: 'DELETE' }); return r.ok; }
+    if (m === 'firebase') { const r = await fetch(`${CFG.firebase}/saz/${col}/${id}.json`, { method: 'DELETE' }); return r.ok; }
     if (m === 'local') { const r = await fetch(`${LOCAL}/kv?col=${col}&id=${id}&dev=${dev}`, { method: 'DELETE' }); return r.ok; }
     return false;
   }
