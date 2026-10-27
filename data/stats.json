@@ -1,0 +1,36 @@
+{
+ "updated": "2026-10-28",
+ "note": "ゲーム内の説明が無い項目は「意味（たぶん）」に推測と書く。検証は tools/ の道具で本人の動画から測り、結果を『実測』に書く。クランの検証メモ（掲示板）は項目名が一致すると下にぶら下がる。",
+ "status_labels": { "yes": "効く", "no": "効かない", "partial": "条件つき", "unknown": "不明・未検証" },
+ "groups": [
+  {
+   "group": "武器の基本ステータス（武器詳細画面の 5 項目）",
+   "items": [
+    { "name": "ダメージ", "meaning": "1 発の体力の減り。サイレンサーで下がるとされる。", "guess": false, "status": "unknown", "measured": "", "how": "同じ的に同じ距離で 1 発ずつ撃ち、体力の減りを比べる（マップトレーニングのBOT）", "source": "武器詳細画面の表示。数値は saz.wiki の表（P90 34 / SCAR 39 / AK-47 47 / M249 65）" },
+    { "name": "連射速度", "meaning": "1 分あたりの発射数に相当する指標。", "guess": true, "status": "unknown", "measured": "", "how": "動画でマガジン 1 本を撃ち切る時間を測り、発/秒に直す", "source": "武器詳細画面。P90 90 / SCAR 80 / AK-47 65 / M249 82（saz.wiki）" },
+    { "name": "精度", "meaning": "弾の散り（クロスヘアの開き）の小ささ。", "guess": true, "status": "unknown", "measured": "", "how": "壁に向かって定点で 10 発撃ち、弾痕の広がりを測る", "source": "武器詳細画面。P90 77 / SCAR 78 / AK-47 77 / M249 61（saz.wiki）" },
+    { "name": "安定性", "meaning": "連射した時の反動（照準の跳ね上がり）の小ささ。", "guess": true, "status": "unknown", "measured": "", "how": "フルオートで壁撃ちして弾痕の縦のずれを測る／動画で照準の上がり幅を測る", "source": "武器詳細画面。P90 81 / SCAR 76 / AK-47 65 / M249 64（saz.wiki）" },
+    { "name": "機動力", "meaning": "持った時の走る速さ。数値が高いほど速い。", "guess": false, "status": "partial", "measured": "第3補給倉庫の同じコースをナイフ 8.97 秒・P90(59) 9.07 秒・SCAR(53) 9.44 秒・M249(41) 12.15 秒。41→53 は数値どおり速くなるが、53→59 は 4% しか変わらない（上の方は頭打ち）。歩き（Shift）は武器に関係なく 13.47 秒で同じ。", "how": "同じコースを W 押しっぱなしで走り、壁に当たるまでの秒数を画面の差分で測る（tools/speedtest.py）", "source": "2026-10-04 実測。data/mobility.md" }
+   ]
+  },
+  {
+   "group": "パーツのオプション（付けると増減する項目）",
+   "items": [
+    { "name": "精度回復速度アップ", "meaning": "撃った後に開いたクロスヘア（散り）が元に戻るまでの速さ。", "guess": true, "status": "unknown", "measured": "", "how": "パーツあり／なしで 1 発撃つ動画を撮り、クロスヘアが閉じ切るまでの時間を比べる（tools/crosshair_timing.py）", "source": "本人の要望で検証予定（2026-10-28）" },
+    { "name": "反動軽減", "meaning": "連射時の照準の跳ね上がりを小さくする。", "guess": true, "status": "unknown", "measured": "", "how": "フルオート壁撃ちの弾痕の縦の広がりをあり／なしで比べる", "source": "gamerch 攻略Wiki の用語" },
+    { "name": "安定性上昇", "meaning": "基本ステータスの安定性を上げる。サイレンサー・フラッシュハイダーに付く。", "guess": true, "status": "unknown", "measured": "", "how": "反動軽減と同じ測り方", "source": "saz.wiki（サイレンサー・フラッシュハイダー）" },
+    { "name": "命中精度上昇", "meaning": "立ち止まって撃った時の散りを小さくする。", "guess": true, "status": "unknown", "measured": "", "how": "定点 10 発の弾痕の広がりをあり／なしで比べる", "source": "gamerch 攻略Wiki の用語" },
+    { "name": "移動時命中精度上昇", "meaning": "歩き・走りながら撃った時の散りを小さくする。KRISS のアンダーバレルの固定オプション。", "guess": true, "status": "unknown", "measured": "", "how": "横歩きしながら 10 発撃った弾痕の広がりを比べる", "source": "gamerch 攻略Wiki" },
+    { "name": "移動中のADS精度向上", "meaning": "覗き込み（ADS）で動きながら撃った時の散りを小さくする。", "guess": true, "status": "unknown", "measured": "", "how": "ADS で横歩きしながら撃った弾痕を比べる", "source": "saz.wiki（付加オプション）" },
+    { "name": "ADSリコイルコントロール", "meaning": "覗き込み（ADS）での反動を小さくする。", "guess": true, "status": "unknown", "measured": "", "how": "ADS フルオートの弾痕の縦の広がりを比べる", "source": "saz.wiki（付加オプション）" },
+    { "name": "連射時の安定性", "meaning": "連射を続けた時の後半の散り・反動を抑える。", "guess": true, "status": "unknown", "measured": "", "how": "30 発撃ち切りの弾痕を前半／後半で分けて比べる", "source": "gamerch 攻略Wiki の用語" },
+    { "name": "リロード速度上昇", "meaning": "リロードにかかる時間を短くする。", "guess": false, "status": "unknown", "measured": "", "how": "動画でリロード開始〜撃てるまでの時間を測る", "source": "gamerch 攻略Wiki" },
+    { "name": "武器切り替え速度上昇", "meaning": "武器を持ち替えてから撃てるまでの時間を短くする。スナイパー用スコープ（通常ズーム版）に付く。", "guess": false, "status": "unknown", "measured": "", "how": "動画で持ち替え〜撃てるまでの時間を測る", "source": "saz.wiki / gamerch" },
+    { "name": "照準操作の高速化", "meaning": "覗き込み（ADS）に入る・戻る時間を短くする。", "guess": true, "status": "unknown", "measured": "", "how": "動画で右クリック〜スコープが出るまでの時間を測る", "source": "gamerch 攻略Wiki の用語" },
+    { "name": "装弾数増加", "meaning": "マガジン 1 本の弾数を増やす。", "guess": false, "status": "unknown", "measured": "", "how": "弾数表示を見る（数字で分かる）", "source": "gamerch 攻略Wiki" },
+    { "name": "機動力上昇", "meaning": "走る速さを上げる。ただし機動力は 53→59 で 4% しか変わらなかったので、上の方は効きが薄いかもしれない。", "guess": true, "status": "unknown", "measured": "", "how": "同じコースの走る秒数をあり／なしで比べる（tools/speedtest.py）", "source": "gamerch 攻略Wiki の用語。機動力の実測は上の項目" },
+    { "name": "継戦能力", "meaning": "不明。予備弾数か、リロードまわりの総合か。", "guess": true, "status": "unknown", "measured": "", "how": "パーツを付けた時に変わる数字を武器詳細画面で確かめる", "source": "gamerch 攻略Wiki の用語（説明なし）" }
+   ]
+  }
+ ]
+}

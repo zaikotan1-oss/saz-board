@@ -53,7 +53,7 @@
   <div class="grp"><button data-mode="move" class="on">動かす</button><button data-mode="del" class="danger">消す</button></div>
   <div class="grp"><span class="t">縮尺</span><button data-mode="calib" class="cal">コースを打つ</button><span id="calinfo" class="t"></span></div>
   <div class="grp"><span class="t">秒数</span><select id="wsel"></select><label class="t"><input type="checkbox" id="showSec" checked> 線に秒数</label><label class="t"><input type="checkbox" id="showPins" checked> 書き込み</label></div>
-  <div class="grp"><button id="boardBtn" title="クランの掲示板（強ポジ・スモークなどの書き込みと検証メモ）">💬 掲示板</button></div>
+  <div class="grp"><button id="boardBtn" title="クランの掲示板（強ポジ・スモークなどの書き込みと検証メモ）">💬 掲示板</button><button id="statsBtn" title="武器のステータスとパーツのオプションの意味・検証結果">📖 ステータス図鑑</button></div>
   <div class="grp"><button id="save" class="save">保存</button><button id="dl">JSONファイル</button><button id="ul">JSON読む</button><input type="file" id="ulf" accept=".json" hidden></div>
   <div class="grp"><button id="png">PNG（この武器）</button><button id="pngall">PNG（全武器）</button></div>
   <div class="grp"><span class="t">下地</span><button id="bg" title="ゲーム内の全体図のスクショを下地にする（ドロップでも可）">画像を選ぶ</button><button id="bgReset" title="元の俯瞰図（無ければ格子）に戻す">戻す</button><input type="file" id="bgf" accept="image/*" hidden></div>
@@ -316,6 +316,7 @@ $('#pngall').onclick = async () => { const keep = weapon; for (const w of IDX.we
 window.__ed = { exportDataURL, setWeapon: w => { weapon = w; $('#wsel').value = w; render(); }, load, get ready(){ return !!G && isReady; } };
 $('#mapSel').onchange = () => load($('#mapSel').value);
 $('#boardBtn').onclick = () => window.open(`board.html?map=${G.map}`, '_blank');
+$('#statsBtn').onclick = () => window.open('stats.html', '_blank');
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && G) SazStore.list('board_' + G.map).then(p => { boardPosts = p; render(); }); });
 const helpBox = $('#helpBox'); const showHelp = on => helpBox.classList.toggle('show', on);
 $('#helpBtn').onclick = () => showHelp(true); $('#helpClose').onclick = $('#helpClose2').onclick = () => { showHelp(false); try { localStorage.setItem('saz-ed-help-seen', '1'); } catch(e) {} };

@@ -4,3 +4,4 @@ tools/runs/*.png
 tools/*.png
 tools/rec*.json
 __pycache__/
+tools/runs/crosshair/

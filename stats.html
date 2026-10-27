@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAZ ステータス図鑑</title>
+<style>
+  :root { --bg:#1b1d22; --panel:#262930; --line:#3a3e48; --text:#e8e8ec; --sub:#9aa0ad; --acc:#f2b705; --ok:#2fd17a; --ng:#e05a5a; --part:#f2b705; --unk:#9aa0ad; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:"Yu Gothic UI","Meiryo",sans-serif; font-size:15px; line-height:1.6; }
+  header { display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+  header h1 { font-size:16px; margin:0; color:var(--acc); flex:1; } header a { color:var(--sub); font-size:13px; }
+  main { padding:10px 12px 60px; max-width:960px; margin:0 auto; }
+  .hint { color:var(--sub); font-size:13px; }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0; }
+  .chip { background:#30343d; color:var(--text); border:1px solid var(--line); border-radius:999px; padding:6px 12px; font-size:14px; cursor:pointer; }
+  .chip.on { background:var(--acc); color:#000; border-color:var(--acc); font-weight:bold; }
+  h2 { font-size:16px; color:var(--acc); border-left:4px solid var(--acc); padding-left:8px; margin:22px 0 8px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:8px 0; }
+  .card .top { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .card .name { font-size:17px; font-weight:bold; flex:1; }
+  .badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:bold; color:#000; }
+  .badge.yes { background:var(--ok); } .badge.no { background:var(--ng); } .badge.partial { background:var(--part); } .badge.unknown { background:var(--unk); }
+  .row { margin:4px 0; } .row b { color:var(--sub); font-weight:normal; font-size:12px; display:inline-block; min-width:5.5em; }
+  .guess { color:#ffd27a; font-size:12px; margin-left:4px; }
+  .measured { background:#1f2a21; border:1px solid #2a4a30; border-radius:8px; padding:6px 10px; margin:6px 0; }
+  .src { color:var(--sub); font-size:12px; }
+  details { margin-top:6px; } summary { cursor:pointer; color:var(--sub); font-size:13px; }
+  ul.notes { list-style:none; margin:6px 0 0; padding:0; } ul.notes li { border-top:1px dashed var(--line); padding:6px 0; font-size:14px; }
+  ul.notes .meta { color:var(--sub); font-size:12px; }
+  .count { color:var(--sub); font-size:12px; }
+</style>
+</head>
+<body>
+<header><h1>SAZ ステータス図鑑</h1><a href="board.html?tab=notes">検証メモを書く</a><a href="editor.html">エディター</a></header>
+<main>
+  <div class="hint">武器の基本ステータスと、パーツで増減するオプションの「意味」と「本当に効くか」をまとめる場所。<span class="guess">（たぶん）</span>が付いた説明はゲーム内に説明が無く、推測。検証した物は「実測」に結果が入る。クランの掲示板で同じ項目名の検証メモがあると、各項目の下にぶら下がる。</div>
+  <div class="chips" id="filter"><button class="chip on" data-f="all">全部</button><button class="chip" data-f="yes">効く</button><button class="chip" data-f="partial">条件つき</button><button class="chip" data-f="no">効かない</button><button class="chip" data-f="unknown">不明・未検証</button></div>
+  <div id="list"></div>
+  <p class="hint" id="updated"></p>
+</main>
+<script src="board-config.js"></script>
+<script src="store.js"></script>
+<script>
+(async () => {
+const $ = s => document.querySelector(s); const S = window.SazStore;
+const D = await (await fetch('data/stats.json?t=' + Date.now())).json();
+let notes = []; try { notes = await S.list('notes'); } catch (e) {}
+let filt = 'all';
+const LABEL = D.status_labels;
+const norm = s => String(s || '').replace(/[\s　・\/／]/g, '').toLowerCase();
+const notesFor = name => { const n = norm(name); return notes.filter(x => { const m = norm(x.item); return m && (m === n || m.includes(n) || n.includes(m)); }); };
+function render() {
+  let html = '';
+  for (const g of D.groups) {
+    const items = g.items.filter(it => filt === 'all' || it.status === filt); if (!items.length) continue;
+    html += `<h2>${S.esc(g.group)}</h2>`;
+    for (const it of items) {
+      const ns = notesFor(it.name);
+      const cnt = { yes: 0, no: 0, unknown: 0 }; ns.forEach(n => cnt[n.effect in cnt ? n.effect : 'unknown']++);
+      html += `<div class="card"><div class="top"><span class="name">${S.esc(it.name)}</span><span class="badge ${it.status}">${LABEL[it.status] || it.status}</span>${ns.length ? `<span class="count">クランのメモ ${ns.length} 件（効く ${cnt.yes}・効かない ${cnt.no}・不明 ${cnt.unknown}）</span>` : ''}</div>
+        <div class="row"><b>意味</b>${S.esc(it.meaning)}${it.guess ? '<span class="guess">（たぶん）</span>' : ''}</div>
+        ${it.measured ? `<div class="measured"><b>実測</b> ${S.esc(it.measured)}</div>` : ''}
+        <div class="row"><b>測り方</b>${S.esc(it.how)}</div>
+        <div class="row src"><b>出典</b>${S.esc(it.source)}</div>
+        ${ns.length ? `<details open><summary>クランの検証メモ</summary><ul class="notes">${ns.sort((a, b) => b.t - a.t).map(n => `<li><span class="badge ${n.effect in LABEL ? n.effect : 'unknown'}">${LABEL[n.effect] || '不明'}</span> ${S.esc(n.text)}<div class="meta">${S.esc(n.name || '名無し')}・${S.fmtTime(n.t)}</div></li>`).join('')}</ul></details>` : ''}
+      </div>`;
+    }
+  }
+  $('#list').innerHTML = html || '<div class="hint">該当なし</div>';
+}
+document.querySelectorAll('#filter .chip').forEach(b => b.onclick = () => { filt = b.dataset.f; document.querySelectorAll('#filter .chip').forEach(x => x.classList.toggle('on', x === b)); render(); });
+$('#updated').textContent = `図鑑の更新: ${D.updated}　／　検証メモの置き場: ${S.mode || '読み込み中'}`;
+render();
+window.__stats = { ready: true, count: D.groups.reduce((s, g) => s + g.items.length, 0) };
+})();
+</script>
+</body>
+</html>
