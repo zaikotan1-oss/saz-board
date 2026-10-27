@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAZ クラン掲示板</title>
+<style>
+  :root { --bg:#1b1d22; --panel:#262930; --line:#3a3e48; --text:#e8e8ec; --sub:#9aa0ad; --acc:#f2b705; --ok:#2fd17a; --ng:#e05a5a; --unk:#9aa0ad; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:"Yu Gothic UI","Meiryo",sans-serif; font-size:15px; }
+  header { display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+  header h1 { font-size:16px; margin:0; color:var(--acc); flex:1; }
+  .tabs { display:flex; border-bottom:1px solid var(--line); background:var(--panel); }
+  .tabs button { flex:1; background:none; border:none; color:var(--sub); padding:10px; font-size:15px; border-bottom:3px solid transparent; cursor:pointer; }
+  .tabs button.on { color:var(--acc); border-bottom-color:var(--acc); font-weight:bold; }
+  main { padding:10px 12px 60px; max-width:900px; margin:0 auto; }
+  select, input, textarea, button { background:#30343d; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:15px; font-family:inherit; }
+  button { cursor:pointer; } button.pri { background:#2a7a3a; font-weight:bold; } button.on { background:var(--acc); color:#000; border-color:var(--acc); font-weight:bold; }
+  input, textarea { width:100%; } textarea { min-height:70px; resize:vertical; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0; }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .chip { border-radius:999px; padding:6px 10px; font-size:14px; }
+  #stage { position:relative; } canvas { width:100%; height:auto; display:block; border:1px solid var(--line); border-radius:8px; touch-action:manipulation; }
+  .hint { color:var(--sub); font-size:13px; }
+  .banner { background:#3a2f12; border:1px solid #6b5a1a; color:#ffe79a; border-radius:8px; padding:8px 10px; margin:8px 0; font-size:14px; }
+  .form { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px; margin:10px 0; }
+  .form h3 { margin:0 0 6px; font-size:15px; color:var(--acc); }
+  ul.list { list-style:none; margin:10px 0; padding:0; }
+  ul.list li { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:8px 10px; margin:6px 0; display:flex; gap:8px; align-items:flex-start; }
+  ul.list li.hi { border-color:var(--acc); }
+  .num { min-width:22px; height:22px; border-radius:50%; background:#fff; color:#000; font-weight:bold; font-size:12px; display:flex; align-items:center; justify-content:center; }
+  .ico { font-size:20px; line-height:1; }
+  .body { flex:1; min-width:0; } .body .t { white-space:pre-wrap; word-break:break-word; } .meta { color:var(--sub); font-size:12px; margin-top:2px; }
+  .x { color:var(--sub); cursor:pointer; padding:0 4px; } .x:hover { color:var(--ng); }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:bold; color:#000; }
+  .badge.yes { background:var(--ok); } .badge.no { background:var(--ng); } .badge.unknown { background:var(--unk); }
+  .item { margin:14px 0 4px; font-size:16px; font-weight:bold; color:var(--acc); border-left:4px solid var(--acc); padding-left:8px; }
+  .item small { color:var(--sub); font-weight:normal; font-size:12px; margin-left:8px; }
+  #msg { color:var(--acc); font-size:14px; min-height:1.2em; }
+  .hide { display:none !important; }
+</style>
+</head>
+<body>
+<header><h1>SAZ クラン掲示板</h1><a href="editor.html" style="color:var(--sub);font-size:13px">エディターへ</a></header>
+<div class="tabs"><button id="tabMap" class="on">🗺 地図の書き込み</button><button id="tabNotes">🧪 検証メモ</button></div>
+<main>
+  <div id="ro" class="banner hide">今は読むだけです（書ける置き場が設定されていません）。</div>
+  <div id="msg"></div>
+
+  <section id="secMap">
+    <div class="row"><select id="mapSel"></select><button id="addBtn" class="pri">＋ 地図に書き込む</button><span class="hint" id="mapHint"></span></div>
+    <div id="stage"><canvas id="cv"></canvas></div>
+    <div id="form" class="form hide">
+      <h3 id="formTitle">地図をタップして場所を決める</h3>
+      <div class="row"><span class="hint">種類:</span><div class="chips" id="kinds"></div></div>
+      <div class="row"><input id="text" placeholder="一言（例: ここから B 入口が見える・煙はこの角へ）"></div>
+      <div class="row"><input id="name" placeholder="名前（表示されます）" style="max-width:200px"><span class="hint" id="posInfo">場所: まだ</span></div>
+      <div class="row"><button id="send" class="pri">送信</button><button id="noPos">場所なしで送る</button><button id="cancel">やめる</button></div>
+    </div>
+    <ul class="list" id="posts"></ul>
+  </section>
+
+  <section id="secNotes" class="hide">
+    <div class="hint">「精度回復速度アップ」などの効果が本当にあるかを溜める場所。項目ごとにまとまります。</div>
+    <div class="form" id="noteForm">
+      <h3>書き足す</h3>
+      <div class="row"><input id="nItem" list="items" placeholder="項目（例: 精度回復速度アップ）"><datalist id="items"></datalist></div>
+      <div class="row chips" id="effects">
+        <button class="chip" data-e="yes">効く</button><button class="chip" data-e="no">効かない</button><button class="chip" data-e="unknown">不明・検証中</button>
+      </div>
+      <div class="row"><textarea id="nText" placeholder="分かったこと（どう試したか・数字・体感など）"></textarea></div>
+      <div class="row"><input id="nName" placeholder="名前" style="max-width:200px"><button id="nSend" class="pri">送信</button></div>
+    </div>
+    <div class="row chips" id="filter"><button class="chip on" data-f="all">全部</button><button class="chip" data-f="yes">効く</button><button class="chip" data-f="no">効かない</button><button class="chip" data-f="unknown">不明</button></div>
+    <div id="notes"></div>
+  </section>
+</main>
+<script src="board-config.js"></script>
+<script src="store.js"></script>
+<script>
+(async () => {
+const $ = s => document.querySelector(s); const S = window.SazStore;
+const DB = await (await fetch('maps/maps.json?t=' + Date.now())).json();
+const cv = $('#cv'), ctx = cv.getContext('2d');
+let MAP = null, img = null, posts = [], notes = [], pending = null, kind = 'star', hi = null, filt = 'all';
+const msg = t => { $('#msg').textContent = t; };
+const nameKey = 'saz-name'; try { $('#name').value = $('#nName').value = localStorage.getItem(nameKey) || ''; } catch (e) {}
+const saveName = v => { try { localStorage.setItem(nameKey, v); } catch (e) {} $('#name').value = $('#nName').value = v; };
+for (const m of DB.maps) { const o = document.createElement('option'); o.value = m.id; o.textContent = m.name; $('#mapSel').appendChild(o); }
+for (const K of S.KINDS) { const b = document.createElement('button'); b.className = 'chip'; b.dataset.k = K.k; b.textContent = `${K.emoji} ${K.label}`; b.style.borderColor = K.color; b.onclick = () => { kind = K.k; markKind(); }; $('#kinds').appendChild(b); }
+function markKind() { document.querySelectorAll('#kinds .chip').forEach(b => b.classList.toggle('on', b.dataset.k === kind)); }
+markKind();
+const mode = await S.detect(); const RO = mode === 'static';
+if (RO) { $('#ro').classList.remove('hide'); $('#addBtn').classList.add('hide'); $('#noteForm').classList.add('hide'); }
+
+// ---- 地図 ----
+const loadImg = src => new Promise((ok, ng) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ng; i.src = src; });
+async function setMap(id) {
+  MAP = DB.maps.find(m => m.id === id) || DB.maps[0]; $('#mapSel').value = MAP.id;
+  cv.width = MAP.w || 800; cv.height = MAP.h || 600; img = null;
+  try { const d = localStorage.getItem('saz-board-bg-' + MAP.id); if (d) img = await loadImg(d); } catch (e) {}
+  if (!img && MAP.image) { try { img = await loadImg(MAP.image); } catch (e) { img = null; } }
+  $('#mapHint').textContent = img ? '' : '俯瞰図が無いマップ（格子）';
+  await refreshPosts();
+}
+function draw() {
+  const W = cv.width, H = cv.height; ctx.fillStyle = '#2b2e36'; ctx.fillRect(0, 0, W, H);
+  if (img) { const s = Math.min(W / img.width, H / img.height), dw = img.width * s, dh = img.height * s; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh); }
+  else { ctx.strokeStyle = '#3c404a'; for (let x = 0; x < W; x += 50) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); } for (let y = 0; y < H; y += 50) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); } }
+  S.drawPins(ctx, posts, { highlight: hi });
+  if (pending && pending.x != null) { const K = S.kindOf(kind); ctx.beginPath(); ctx.arc(pending.x, pending.y, 16, 0, Math.PI * 2); ctx.strokeStyle = '#fff'; ctx.setLineDash([4, 4]); ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]); ctx.font = '20px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(K.emoji, pending.x, pending.y + 1); }
+}
+async function refreshPosts() { posts = await S.list('board_' + MAP.id); draw(); renderPosts(); }
+function renderPosts() {
+  $('#posts').innerHTML = posts.length ? posts.map((p, i) => { const K = S.kindOf(p.kind); return `<li data-id="${p.id}" class="${hi === p.id ? 'hi' : ''}"><span class="num">${p.x != null ? i + 1 : '–'}</span><span class="ico">${K.emoji}</span><div class="body"><div class="t"><b>${K.label}</b>　${S.esc(p.text)}</div><div class="meta">${S.esc(p.name || '名無し')}・${S.fmtTime(p.t)}</div></div>${p.dev === S.dev && !RO ? `<span class="x" data-del="${p.id}" title="自分の書き込みを消す">✕</span>` : ''}</li>`; }).join('') : '<li><div class="body hint">まだ書き込みはありません。</div></li>';
+}
+$('#posts').addEventListener('click', async ev => {
+  const del = ev.target.dataset.del; if (del) { if (!confirm('この書き込みを消しますか？')) return; await S.remove('board_' + MAP.id, del); await refreshPosts(); return; }
+  const li = ev.target.closest('li[data-id]'); if (!li) return; hi = hi === li.dataset.id ? null : li.dataset.id; draw(); renderPosts();
+  if (hi) { const p = posts.find(x => x.id === hi); if (p && p.x != null) cv.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+});
+$('#mapSel').onchange = () => { pending = null; $('#form').classList.add('hide'); setMap($('#mapSel').value); };
+$('#addBtn').onclick = () => { pending = { x: null, y: null }; $('#form').classList.remove('hide'); $('#formTitle').textContent = '地図をタップして場所を決める'; $('#posInfo').textContent = '場所: まだ（地図をタップ）'; msg('地図の書き込みたい所をタップ'); draw(); $('#form').scrollIntoView({ behavior: 'smooth' }); };
+$('#cancel').onclick = () => { pending = null; $('#form').classList.add('hide'); msg(''); draw(); };
+cv.addEventListener('pointerdown', ev => {
+  const r = cv.getBoundingClientRect(); const x = Math.round((ev.clientX - r.left) * cv.width / r.width), y = Math.round((ev.clientY - r.top) * cv.height / r.height);
+  if (pending) { pending = { x, y }; $('#posInfo').textContent = `場所: 決めました（${x}, ${y}）`; $('#formTitle').textContent = '種類と一言を入れて送信'; msg(''); draw(); $('#text').focus(); return; }
+  // 印をタップ → 一覧を光らせる
+  let best = null, bd = 22; posts.forEach(p => { if (p.x == null) return; const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = p; } });
+  hi = best ? best.id : null; draw(); renderPosts(); if (best) { const li = document.querySelector(`li[data-id="${best.id}"]`); li && li.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+});
+async function sendPost(withPos) {
+  const text = $('#text').value.trim(); if (!text) { msg('一言を入れてください'); return; }
+  if (withPos && (!pending || pending.x == null)) { msg('先に地図をタップして場所を決めてください（場所なしで送るなら右のボタン）'); return; }
+  saveName($('#name').value.trim());
+  try { await S.add('board_' + MAP.id, { map: MAP.id, kind, text, name: $('#name').value.trim(), x: withPos ? pending.x : null, y: withPos ? pending.y : null }); }
+  catch (e) { msg('送れませんでした（置き場に届きません）'); return; }
+  $('#text').value = ''; pending = null; $('#form').classList.add('hide'); msg('書き込みました'); await refreshPosts();
+}
+$('#send').onclick = () => sendPost(true); $('#noPos').onclick = () => sendPost(false);
+$('#text').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) sendPost(pending && pending.x != null); });
+
+// ---- 検証メモ ----
+let effect = 'unknown';
+document.querySelectorAll('#effects .chip').forEach(b => b.onclick = () => { effect = b.dataset.e; document.querySelectorAll('#effects .chip').forEach(x => x.classList.toggle('on', x === b)); });
+document.querySelector('#effects .chip[data-e="unknown"]').classList.add('on');
+document.querySelectorAll('#filter .chip').forEach(b => b.onclick = () => { filt = b.dataset.f; document.querySelectorAll('#filter .chip').forEach(x => x.classList.toggle('on', x === b)); renderNotes(); });
+const EFF = { yes: '効く', no: '効かない', unknown: '不明' };
+async function refreshNotes() { notes = await S.list('notes'); renderNotes(); }
+function renderNotes() {
+  const items = {}; for (const n of notes) (items[n.item || '（項目なし）'] ||= []).push(n);
+  $('#items').innerHTML = Object.keys(items).map(k => `<option value="${S.esc(k)}">`).join('');
+  const names = Object.keys(items).sort((a, b) => Math.max(...items[b].map(n => n.t)) - Math.max(...items[a].map(n => n.t)));
+  let html = '';
+  for (const k of names) {
+    const rows = items[k].filter(n => filt === 'all' || n.effect === filt); if (!rows.length) continue;
+    const cnt = { yes: 0, no: 0, unknown: 0 }; items[k].forEach(n => cnt[n.effect in cnt ? n.effect : 'unknown']++);
+    html += `<div class="item">${S.esc(k)}<small>効く ${cnt.yes}・効かない ${cnt.no}・不明 ${cnt.unknown}</small></div><ul class="list">` +
+      rows.sort((a, b) => b.t - a.t).map(n => `<li><span class="badge ${n.effect in EFF ? n.effect : 'unknown'}">${EFF[n.effect] || '不明'}</span><div class="body"><div class="t">${S.esc(n.text)}</div><div class="meta">${S.esc(n.name || '名無し')}・${S.fmtTime(n.t)}</div></div>${n.dev === S.dev && !RO ? `<span class="x" data-ndel="${n.id}">✕</span>` : ''}</li>`).join('') + '</ul>';
+  }
+  $('#notes').innerHTML = html || '<div class="hint" style="margin:12px 0">まだメモはありません。</div>';
+}
+$('#notes').addEventListener('click', async ev => { const id = ev.target.dataset.ndel; if (!id) return; if (!confirm('このメモを消しますか？')) return; await S.remove('notes', id); await refreshNotes(); });
+$('#nSend').onclick = async () => {
+  const item = $('#nItem').value.trim(), text = $('#nText').value.trim(); if (!item) { msg('項目を入れてください'); return; } if (!text) { msg('内容を入れてください'); return; }
+  saveName($('#nName').value.trim());
+  try { await S.add('notes', { item, effect, text, name: $('#nName').value.trim() }); } catch (e) { msg('送れませんでした（置き場に届きません）'); return; }
+  $('#nText').value = ''; msg('書き込みました'); await refreshNotes();
+};
+
+// ---- タブ・更新 ----
+function tab(t) { $('#tabMap').classList.toggle('on', t === 'map'); $('#tabNotes').classList.toggle('on', t !== 'map'); $('#secMap').classList.toggle('hide', t !== 'map'); $('#secNotes').classList.toggle('hide', t === 'map'); try { localStorage.setItem('saz-board-tab', t); } catch (e) {} }
+$('#tabMap').onclick = () => tab('map'); $('#tabNotes').onclick = () => tab('notes');
+const q = new URLSearchParams(location.search);
+await setMap(q.get('map') || DB.maps[0].id); await refreshNotes();
+let t0 = 'map'; try { t0 = q.get('tab') || localStorage.getItem('saz-board-tab') || 'map'; } catch (e) {} tab(t0);
+const refreshAll = () => { if (document.visibilityState === 'visible') { refreshPosts(); refreshNotes(); } };
+document.addEventListener('visibilitychange', refreshAll); setInterval(refreshAll, 30000);
+window.__board = { get ready() { return !!MAP; }, posts: () => posts, notes: () => notes };
+})();
+</script>
+</body>
+</html>

@@ -16,6 +16,7 @@ HTML 1 枚（`index.html`）。見本パターンは生成スクリプトから�
 | `maps/*.jpg,png` | 下地の俯瞰図（原作サドンアタックの 2012 年ブログ画像。`maps/raw/` に元と出所） |
 | `tools/make_patterns.py` | 見本パターン（16 本）を地名から生成 → `patterns/*.json` と `patterns/index.json` |
 | `editor.html` | 移動時間エディター（点・通路・縮尺・武器切替・全地点間の表・PNG）。保存は `tools/save_server.py`（8843、常駐）→ `data/timemap/edits/<map>.json`。Pages では JSON ファイルで受け渡し |
+| `board.html` + `store.js` + `board-config.js` | クラン掲示板（スマホ向け）。地図の書き込み（⭐強ポジ/💨スモーク/⚠注意/👁待ち伏せ/💣爆弾/💥グレ/📝メモ を地図の場所に貼る）と検証メモ（項目ごとに 効く/効かない/不明）。置き場は store.js が自動で選ぶ: 手元 save_server（`data/board/<名前>.json`）→ board-config.js の Firebase URL → Pages は data/board の写しを読むだけ。印は editor の地図と PNG にも出る |
 | `tools/timemap_build.py` / `tools/export_timemap.py` | edits から表を再計算 → `data/timemap/<map>.json`、editor.html を使って武器別 PNG → `data/timemap/png/` |
 | `tools/export_png.py` | 見本を全部 PNG に（Playwright のヘッドレス Chromium、8841 を一時的に使う） → `patterns/png/` |
 

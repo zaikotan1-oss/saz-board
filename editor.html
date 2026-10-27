@@ -52,7 +52,8 @@
   <div class="grp"><span class="t">通路</span><button data-mode="add">引く</button><button data-mode="bend">曲げ点</button></div>
   <div class="grp"><button data-mode="move" class="on">動かす</button><button data-mode="del" class="danger">消す</button></div>
   <div class="grp"><span class="t">縮尺</span><button data-mode="calib" class="cal">コースを打つ</button><span id="calinfo" class="t"></span></div>
-  <div class="grp"><span class="t">秒数</span><select id="wsel"></select><label class="t"><input type="checkbox" id="showSec" checked> 線に秒数</label></div>
+  <div class="grp"><span class="t">秒数</span><select id="wsel"></select><label class="t"><input type="checkbox" id="showSec" checked> 線に秒数</label><label class="t"><input type="checkbox" id="showPins" checked> 書き込み</label></div>
+  <div class="grp"><button id="boardBtn" title="クランの掲示板（強ポジ・スモークなどの書き込みと検証メモ）">💬 掲示板</button></div>
   <div class="grp"><button id="save" class="save">保存</button><button id="dl">JSONファイル</button><button id="ul">JSON読む</button><input type="file" id="ulf" accept=".json" hidden></div>
   <div class="grp"><button id="png">PNG（この武器）</button><button id="pngall">PNG（全武器）</button></div>
   <div class="grp"><span class="t">下地</span><button id="bg" title="ゲーム内の全体図のスクショを下地にする（ドロップでも可）">画像を選ぶ</button><button id="bgReset" title="元の俯瞰図（無ければ格子）に戻す">戻す</button><input type="file" id="bgf" accept="image/*" hidden></div>
@@ -127,6 +128,12 @@
   </ul>
   <div class="tip">速さの元データ（実測）: ナイフ 8.97 秒のコースを P90 9.07 / SCAR 9.44 / M249 12.15 / 歩き 13.47 秒。歩きはどの武器でも同じ。しゃがみは未計測。</div>
 
+  <h2>掲示板（クランで共有）</h2>
+  <ul>
+    <li><span class="b">💬 掲示板</span> を押すと別のページが開く。<b>地図の書き込み</b>（⭐強ポジ・💨スモーク・⚠注意・👁待ち伏せ・💣爆弾・💥グレ・📝メモ を地図の場所に貼る）と <b>検証メモ</b>（「精度回復速度アップ」などが効くか効かないかを項目ごとに溜める）の 2 つ</li>
+    <li>貼った印はこの画面の地図にも出て、PNG にも入る。「書き込み」のチェックで隠せる</li>
+    <li>スマホからも書ける（公開の置き場を設定してある時）</li>
+  </ul>
   <h2>困った時</h2>
   <ul>
     <li>線が引けない → 点の「上」をクリックしているか確認（丸の中）</li>
@@ -153,6 +160,8 @@
     <table id="nlist"></table>
   </aside>
 </main>
+<script src="board-config.js"></script>
+<script src="store.js"></script>
 <script>
 (async () => {
 const $ = s => document.querySelector(s);
@@ -163,11 +172,11 @@ const SAVE = 'http://127.0.0.1:8843';
 const LS_BG = 'saz-board-bg-'; // 作戦ボード（index.html）と同じ記憶場所。片方でドロップした下地はもう片方でも使える
 const loadImg = src => new Promise((ok, ng) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ng; i.src = src; });
 const DEFAULT_PXS = 28.7; // 第3補給倉庫の実測（Bロング 257px = ナイフ 8.97 秒）
-let G = null, img = null, bgOverride = null, isReady = false, MAPW = 800, MAPH = 600, mode = 'move', selEdge = null, refEdge = null, drag = null, addFrom = null, weapon = 'p90', calPts = [], serverOK = false;
+let G = null, img = null, boardPosts = [], bgOverride = null, isReady = false, MAPW = 800, MAPH = 600, mode = 'move', selEdge = null, refEdge = null, drag = null, addFrom = null, weapon = 'p90', calPts = [], serverOK = false;
 for (const m of IDX.maps) { const o = document.createElement('option'); o.value = m.map; o.textContent = m.name; $('#mapSel').appendChild(o); }
 for (const w of IDX.weapons) { const o = document.createElement('option'); o.value = w.id; o.textContent = w.label; $('#wsel').appendChild(o); }
 $('#wsel').value = weapon; $('#wsel').onchange = () => { weapon = $('#wsel').value; render(); };
-$('#showSec').onchange = () => render();
+$('#showSec').onchange = () => render(); $('#showPins').onchange = () => render();
 const WPN = () => IDX.weapons.find(w => w.id === weapon);
 const factor = () => WPN().factor;
 function msg(t){ $('#msg').textContent = t; }
@@ -185,6 +194,7 @@ async function load(id){
   try { if (m.image) img = await loadImg(m.image); } catch(e) { img = null; }
   try { const d = localStorage.getItem(LS_BG + id); if (d) bgOverride = await loadImg(d); } catch(e) {}
   isReady = true;
+  boardPosts = []; SazStore.list('board_' + id).then(p => { if (G && G.map === id) { boardPosts = p; render(); } });
   msg((got ? '保存済みを読み込みました。' : 'まだ何も置いていません。') + (serverOK ? '' : '（保存サーバー無し: 「JSONファイル」で保存）') + (!img && !bgOverride ? '　※俯瞰図が無いマップ: ゲーム内の全体図のスクショをここにドロップ' : ''));
   render();
 }
@@ -219,6 +229,7 @@ function drawMap(c){
     if ($('#showSec').checked) { const m = midpoint(P), L = plen(P); const t = `${fmt(sec(L))}s` + (refL && refEdge !== e ? ` ×${(L/refL).toFixed(2)}` : ''); c.fillStyle = 'rgba(0,0,0,.7)'; c.beginPath(); c.roundRect(m[0] - 34, m[1] - 10, 68, 20, 5); c.fill(); strokeText(c, t, m[0], m[1], 12, '#fff'); }
   }
   for (const [n, p] of Object.entries(G.nodes)) { const col = G.team[n] === 'def' ? '#2f7de1' : '#e03b3b'; c.fillStyle = col; c.strokeStyle = addFrom === n ? '#f2b705' : '#fff'; c.lineWidth = addFrom === n ? 4 : 2; c.beginPath(); c.arc(p[0], p[1], 11, 0, Math.PI*2); c.fill(); c.stroke(); strokeText(c, n, p[0], p[1] - 19, 13, '#fff'); }
+  if ($('#showPins').checked) SazStore.drawPins(c, boardPosts);
   c.fillStyle = 'rgba(0,0,0,.6)'; c.fillRect(0, cv.height - 30, 520, 30);
   let x = 12, y = cv.height - 15; for (const [col, t] of [['#e03b3b', '攻め'], ['#2f7de1', '守り']]) { c.fillStyle = col; c.beginPath(); c.arc(x + 7, y, 7, 0, Math.PI*2); c.fill(); strokeText(c, t, x + 18, y, 12, '#fff', 'left'); x += 60; }
   strokeText(c, `秒数 = ${WPN().label} で走った時間${G.pxs ? '' : '（縮尺は第3補給倉庫の値を仮に流用）'}`, x + 6, y, 12, '#f2b705', 'left');
@@ -304,6 +315,8 @@ $('#png').onclick = () => dl(`${mapName()}_${WPN().label.replace(/[\/ ]/g, '')}_
 $('#pngall').onclick = async () => { const keep = weapon; for (const w of IDX.weapons) { weapon = w.id; dl(`${mapName()}_${w.label.replace(/[\/ ]/g, '')}_移動時間.png`, exportDataURL()); await new Promise(r => setTimeout(r, 400)); } weapon = keep; render(); };
 window.__ed = { exportDataURL, setWeapon: w => { weapon = w; $('#wsel').value = w; render(); }, load, get ready(){ return !!G && isReady; } };
 $('#mapSel').onchange = () => load($('#mapSel').value);
+$('#boardBtn').onclick = () => window.open(`board.html?map=${G.map}`, '_blank');
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && G) SazStore.list('board_' + G.map).then(p => { boardPosts = p; render(); }); });
 const helpBox = $('#helpBox'); const showHelp = on => helpBox.classList.toggle('show', on);
 $('#helpBtn').onclick = () => showHelp(true); $('#helpClose').onclick = $('#helpClose2').onclick = () => { showHelp(false); try { localStorage.setItem('saz-ed-help-seen', '1'); } catch(e) {} };
 helpBox.addEventListener('click', e => { if (e.target === helpBox) $('#helpClose').onclick(); });
