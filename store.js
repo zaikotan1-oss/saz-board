@@ -28,6 +28,22 @@ window.SazStore = (() => {
     if (m === 'local') { item.id = newId(); const r = await fetch(`${LOCAL}/kv?col=${col}`, { method: 'POST', body: JSON.stringify(item) }); if (!r.ok) throw new Error('save failed'); return item; }
     throw new Error('readonly');
   }
+  async function get(col, id) {
+    const m = await detect();
+    try {
+      if (m === 'firebase') { const r = await fetch(`${CFG.firebase}/saz/${col}/${id}.json`); const v = await r.json(); return v ? { ...v, id } : null; }
+      const all = await list(col); return all.find(x => x.id === id) || null;
+    } catch (e) { return null; }
+  }
+  // 画像: ファイル → 縮小した JPEG の dataURL（full は最大 1280px、thumb は最大 240px）
+  function shrink(img, max, q) { const s = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', q); }
+  async function imageFromFile(file) {
+    const url = URL.createObjectURL(file);
+    try { const img = await new Promise((ok, ng) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ng; i.src = url; }); return { full: shrink(img, 1280, 0.8), thumb: shrink(img, 240, 0.7) }; }
+    finally { URL.revokeObjectURL(url); }
+  }
+  // 画像を置き場に入れて id を返す（本文には thumb だけ入れ、full は見る時に取る）
+  async function putImage(full) { const r = await add('img', { text: 'img', data: full }); return r.id; }
   async function remove(col, id) {
     const m = await detect();
     if (m === 'firebase') { const r = await fetch(`${CFG.firebase}/saz/${col}/${id}.json`, { method: 'DELETE' }); return r.ok; }
@@ -72,5 +88,5 @@ window.SazStore = (() => {
   }
   const fmtTime = t => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
   const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-  return { detect, list, add, remove, dev, KINDS, kindOf, drawPins, fmtTime, esc, get mode() { return mode; } };
+  return { detect, list, get, add, remove, imageFromFile, putImage, dev, KINDS, kindOf, drawPins, fmtTime, esc, get mode() { return mode; } };
 })();

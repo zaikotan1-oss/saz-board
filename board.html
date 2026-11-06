@@ -9,13 +9,13 @@
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font-family:"Yu Gothic UI","Meiryo",sans-serif; font-size:15px; }
   header { display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
-  header h1 { font-size:16px; margin:0; color:var(--acc); flex:1; }
+  header h1 { font-size:16px; margin:0; color:var(--acc); flex:1; } header a { color:var(--sub); font-size:13px; }
   .tabs { display:flex; border-bottom:1px solid var(--line); background:var(--panel); }
   .tabs button { flex:1; background:none; border:none; color:var(--sub); padding:10px; font-size:15px; border-bottom:3px solid transparent; cursor:pointer; }
   .tabs button.on { color:var(--acc); border-bottom-color:var(--acc); font-weight:bold; }
   main { padding:10px 12px 60px; max-width:900px; margin:0 auto; }
   select, input, textarea, button { background:#30343d; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:15px; font-family:inherit; }
-  button { cursor:pointer; } button.pri { background:#2a7a3a; font-weight:bold; } button.on { background:var(--acc); color:#000; border-color:var(--acc); font-weight:bold; }
+  button { cursor:pointer; } button.pri { background:#2a7a3a; font-weight:bold; } button.on { background:var(--acc); color:#000; border-color:var(--acc); font-weight:bold; } button.sm { padding:4px 8px; font-size:13px; }
   input, textarea { width:100%; } textarea { min-height:70px; resize:vertical; }
   .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0; }
   .chips { display:flex; gap:6px; flex-wrap:wrap; }
@@ -26,8 +26,9 @@
   .form { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px; margin:10px 0; }
   .form h3 { margin:0 0 6px; font-size:15px; color:var(--acc); }
   ul.list { list-style:none; margin:10px 0; padding:0; }
-  ul.list li { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:8px 10px; margin:6px 0; display:flex; gap:8px; align-items:flex-start; }
-  ul.list li.hi { border-color:var(--acc); }
+  ul.list > li { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:8px 10px; margin:6px 0; }
+  ul.list > li.hi { border-color:var(--acc); }
+  .head { display:flex; gap:8px; align-items:flex-start; }
   .num { min-width:22px; height:22px; border-radius:50%; background:#fff; color:#000; font-weight:bold; font-size:12px; display:flex; align-items:center; justify-content:center; }
   .ico { font-size:20px; line-height:1; }
   .body { flex:1; min-width:0; } .body .t { white-space:pre-wrap; word-break:break-word; } .meta { color:var(--sub); font-size:12px; margin-top:2px; }
@@ -38,10 +39,19 @@
   .item small { color:var(--sub); font-weight:normal; font-size:12px; margin-left:8px; }
   #msg { color:var(--acc); font-size:14px; min-height:1.2em; }
   .hide { display:none !important; }
+  img.thumb { max-width:160px; max-height:120px; border-radius:6px; border:1px solid var(--line); margin-top:6px; cursor:zoom-in; display:block; }
+  .attach { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } .attach img { max-height:60px; border-radius:6px; border:1px solid var(--line); }
+  .tools { display:flex; gap:10px; margin-top:6px; align-items:center; } .tools button { background:none; border:none; color:var(--sub); padding:2px 4px; font-size:13px; } .tools button:hover { color:var(--acc); }
+  .thread { margin:8px 0 0 30px; border-left:2px solid var(--line); padding-left:10px; }
+  .thread .rep { padding:6px 0; border-top:1px dashed var(--line); } .thread .rep:first-child { border-top:none; }
+  .thread .rform { margin-top:6px; }
+  #overlay { position:fixed; inset:0; background:rgba(0,0,0,.9); display:none; align-items:center; justify-content:center; z-index:50; cursor:zoom-out; }
+  #overlay.show { display:flex; } #overlay img { max-width:96vw; max-height:92vh; border-radius:8px; }
+  .busy { opacity:.6; pointer-events:none; }
 </style>
 </head>
 <body>
-<header><h1>SAZ クラン掲示板</h1><a href="stats.html" style="color:var(--sub);font-size:13px;margin-right:10px">ステータス図鑑</a><a href="editor.html" style="color:var(--sub);font-size:13px">エディターへ</a></header>
+<header><h1>SAZ クラン掲示板</h1><a href="stats.html" style="margin-right:10px">ステータス図鑑</a><a href="editor.html">エディターへ</a></header>
 <div class="tabs"><button id="tabMap" class="on">🗺 地図の書き込み</button><button id="tabNotes">🧪 検証メモ</button></div>
 <main>
   <div id="ro" class="banner hide">今は読むだけです（書ける置き場が設定されていません）。</div>
@@ -54,6 +64,7 @@
       <h3 id="formTitle">地図をタップして場所を決める</h3>
       <div class="row"><span class="hint">種類:</span><div class="chips" id="kinds"></div></div>
       <div class="row"><input id="text" placeholder="一言（例: ここから B 入口が見える・煙はこの角へ）"></div>
+      <div class="row attach"><button class="sm" data-pick="pImg">📷 画像を付ける</button><input type="file" id="pImg" accept="image/*" hidden><span id="pImgPrev"></span></div>
       <div class="row"><input id="name" placeholder="名前（表示されます）" style="max-width:200px"><span class="hint" id="posInfo">場所: まだ</span></div>
       <div class="row"><button id="send" class="pri">送信</button><button id="noPos">場所なしで送る</button><button id="cancel">やめる</button></div>
     </div>
@@ -69,12 +80,14 @@
         <button class="chip" data-e="yes">効く</button><button class="chip" data-e="no">効かない</button><button class="chip" data-e="unknown">不明・検証中</button>
       </div>
       <div class="row"><textarea id="nText" placeholder="分かったこと（どう試したか・数字・体感など）"></textarea></div>
+      <div class="row attach"><button class="sm" data-pick="nImg">📷 画像を付ける</button><input type="file" id="nImg" accept="image/*" hidden><span id="nImgPrev"></span></div>
       <div class="row"><input id="nName" placeholder="名前" style="max-width:200px"><button id="nSend" class="pri">送信</button></div>
     </div>
     <div class="row chips" id="filter"><button class="chip on" data-f="all">全部</button><button class="chip" data-f="yes">効く</button><button class="chip" data-f="no">効かない</button><button class="chip" data-f="unknown">不明</button></div>
     <div id="notes"></div>
   </section>
 </main>
+<div id="overlay"><img id="ovImg" alt=""></div>
 <script src="board-config.js"></script>
 <script src="store.js"></script>
 <script>
@@ -83,8 +96,12 @@ const $ = s => document.querySelector(s); const S = window.SazStore;
 const DB = await (await fetch('maps/maps.json?t=' + Date.now())).json();
 const cv = $('#cv'), ctx = cv.getContext('2d');
 let MAP = null, img = null, posts = [], notes = [], pending = null, kind = 'star', hi = null, filt = 'all';
+const picked = {};            // 入力欄ごとの選んだ画像 { pImg: {full, thumb}, nImg: ..., 'r_<id>': ... }
+const open = new Set();       // 開いているスレッド（書き込み id）
+const threads = {};           // id → 返信の配列
 const msg = t => { $('#msg').textContent = t; };
-const nameKey = 'saz-name'; try { $('#name').value = $('#nName').value = localStorage.getItem(nameKey) || ''; } catch (e) {}
+const nameKey = 'saz-name'; const getName = () => { try { return localStorage.getItem(nameKey) || ''; } catch (e) { return ''; } };
+$('#name').value = $('#nName').value = getName();
 const saveName = v => { try { localStorage.setItem(nameKey, v); } catch (e) {} $('#name').value = $('#nName').value = v; };
 for (const m of DB.maps) { const o = document.createElement('option'); o.value = m.id; o.textContent = m.name; $('#mapSel').appendChild(o); }
 for (const K of S.KINDS) { const b = document.createElement('button'); b.className = 'chip'; b.dataset.k = K.k; b.textContent = `${K.emoji} ${K.label}`; b.style.borderColor = K.color; b.onclick = () => { kind = K.k; markKind(); }; $('#kinds').appendChild(b); }
@@ -92,6 +109,42 @@ function markKind() { document.querySelectorAll('#kinds .chip').forEach(b => b.c
 markKind();
 const mode = await S.detect(); const RO = mode === 'static';
 if (RO) { $('#ro').classList.remove('hide'); $('#addBtn').classList.add('hide'); $('#noteForm').classList.add('hide'); }
+
+// ---- 画像（選ぶ・見せる） ----
+async function onPick(inputEl, key, prevEl) {
+  const f = inputEl.files[0]; inputEl.value = ''; if (!f) return;
+  try { picked[key] = await S.imageFromFile(f); prevEl.innerHTML = `<img src="${picked[key].thumb}" alt=""> <span class="x" data-unpick="${key}">✕</span>`; }
+  catch (e) { msg('画像を読めませんでした'); }
+}
+document.addEventListener('change', ev => { const inp = ev.target; if (inp.type === 'file' && inp.id) onPick(inp, inp.id, document.getElementById(inp.id + 'Prev')); });
+document.addEventListener('click', ev => {
+  const pk = ev.target.dataset.pick; if (pk) { document.getElementById(pk).click(); return; }
+  const up = ev.target.dataset.unpick; if (up) { delete picked[up]; const pv = document.getElementById(up + 'Prev'); if (pv) pv.innerHTML = ''; return; }
+  const im = ev.target.dataset.img; if (im) { showFull(im); return; }
+});
+async function showFull(id) { $('#ovImg').src = ''; $('#overlay').classList.add('show'); const v = await S.get('img', id); if (v && v.data) $('#ovImg').src = v.data; else { $('#overlay').classList.remove('show'); msg('画像が取れませんでした'); } }
+$('#overlay').onclick = () => $('#overlay').classList.remove('show');
+async function attachImage(item, key) { const p = picked[key]; if (!p) return item; item.img = await S.putImage(p.full); item.thumb = p.thumb; delete picked[key]; const pv = document.getElementById(key + 'Prev'); if (pv) pv.innerHTML = ''; return item; }
+const thumbHtml = p => p.thumb ? `<img class="thumb" src="${p.thumb}" data-img="${p.img}" alt="">` : '';
+
+// ---- スレッド（返信） ----
+const repCol = id => 'rep_' + id;
+async function loadThread(id) { threads[id] = await S.list(repCol(id)); }
+function threadHtml(id) {
+  const reps = threads[id] || [];
+  const list = reps.map(r => `<div class="rep"><div class="t">${S.esc(r.text)}</div>${thumbHtml(r)}<div class="meta">${S.esc(r.name || '名無し')}・${S.fmtTime(r.t)}${r.dev === S.dev && !RO ? ` <span class="x" data-rdel="${r.id}" data-parent="${id}">✕</span>` : ''}</div></div>`).join('');
+  const form = RO ? '' : `<div class="rform"><div class="row"><input id="rt_${id}" placeholder="返信を書く"></div><div class="row attach"><button class="sm" data-pick="r_${id}">📷 画像</button><input type="file" id="r_${id}" accept="image/*" hidden><span id="r_${id}Prev"></span><button class="sm pri" data-rsend="${id}">返信する</button></div></div>`;
+  return `<div class="thread" id="th_${id}">${list || '<div class="hint">まだ返信はありません</div>'}${form}</div>`;
+}
+const toolsHtml = (p, own) => `<div class="tools"><button data-rep="${p.id}">💬 ${open.has(p.id) ? '返信を閉じる' : '返信' + (threads[p.id] ? `（${threads[p.id].length}）` : '')}</button>${own && !RO ? `<button data-del="${p.id}" data-col="${p._col}">🗑 消す</button>` : ''}</div>`;
+document.addEventListener('click', async ev => {
+  const t = ev.target;
+  const rp = t.dataset.rep; if (rp) { if (open.has(rp)) open.delete(rp); else { open.add(rp); await loadThread(rp); } renderAll(); return; }
+  const rs = t.dataset.rsend; if (rs) { const inp = document.getElementById('rt_' + rs); const text = (inp.value || '').trim(); if (!text && !picked['r_' + rs]) { msg('返信の文か画像を入れてください'); return; }
+    t.classList.add('busy'); try { let item = { text: text || '（画像）', name: getName() }; item = await attachImage(item, 'r_' + rs); await S.add(repCol(rs), item); await loadThread(rs); renderAll(); msg('返信しました'); } catch (e) { msg('送れませんでした'); } return; }
+  const rd = t.dataset.rdel; if (rd) { if (!confirm('この返信を消しますか？')) return; await S.remove(repCol(t.dataset.parent), rd); await loadThread(t.dataset.parent); renderAll(); return; }
+  const dl = t.dataset.del; if (dl && t.dataset.col) { if (!confirm('この書き込みを消しますか？（返信は残ります）')) return; await S.remove(t.dataset.col, dl); if (t.dataset.col === 'notes') await refreshNotes(); else await refreshPosts(); return; }
+});
 
 // ---- 地図 ----
 const loadImg = src => new Promise((ok, ng) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ng; i.src = src; });
@@ -110,12 +163,12 @@ function draw() {
   S.drawPins(ctx, posts, { highlight: hi });
   if (pending && pending.x != null) { const K = S.kindOf(kind); ctx.beginPath(); ctx.arc(pending.x, pending.y, 16, 0, Math.PI * 2); ctx.strokeStyle = '#fff'; ctx.setLineDash([4, 4]); ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]); ctx.font = '20px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(K.emoji, pending.x, pending.y + 1); }
 }
-async function refreshPosts() { posts = await S.list('board_' + MAP.id); draw(); renderPosts(); }
+async function refreshPosts() { posts = await S.list('board_' + MAP.id); posts.forEach(p => p._col = 'board_' + MAP.id); draw(); renderPosts(); }
 function renderPosts() {
-  $('#posts').innerHTML = posts.length ? posts.map((p, i) => { const K = S.kindOf(p.kind); return `<li data-id="${p.id}" class="${hi === p.id ? 'hi' : ''}"><span class="num">${p.x != null ? i + 1 : '–'}</span><span class="ico">${K.emoji}</span><div class="body"><div class="t"><b>${K.label}</b>　${S.esc(p.text)}</div><div class="meta">${S.esc(p.name || '名無し')}・${S.fmtTime(p.t)}</div></div>${p.dev === S.dev && !RO ? `<span class="x" data-del="${p.id}" title="自分の書き込みを消す">✕</span>` : ''}</li>`; }).join('') : '<li><div class="body hint">まだ書き込みはありません。</div></li>';
+  $('#posts').innerHTML = posts.length ? posts.map((p, i) => { const K = S.kindOf(p.kind); return `<li data-id="${p.id}" class="${hi === p.id ? 'hi' : ''}"><div class="head"><span class="num">${p.x != null ? i + 1 : '–'}</span><span class="ico">${K.emoji}</span><div class="body"><div class="t"><b>${K.label}</b>　${S.esc(p.text)}</div>${thumbHtml(p)}<div class="meta">${S.esc(p.name || '名無し')}・${S.fmtTime(p.t)}</div>${toolsHtml(p, p.dev === S.dev)}</div></div>${open.has(p.id) ? threadHtml(p.id) : ''}</li>`; }).join('') : '<li><div class="body hint">まだ書き込みはありません。</div></li>';
 }
-$('#posts').addEventListener('click', async ev => {
-  const del = ev.target.dataset.del; if (del) { if (!confirm('この書き込みを消しますか？')) return; await S.remove('board_' + MAP.id, del); await refreshPosts(); return; }
+$('#posts').addEventListener('click', ev => {
+  if (ev.target.closest('.tools, .thread, img, .x')) return;
   const li = ev.target.closest('li[data-id]'); if (!li) return; hi = hi === li.dataset.id ? null : li.dataset.id; draw(); renderPosts();
   if (hi) { const p = posts.find(x => x.id === hi); if (p && p.x != null) cv.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 });
@@ -125,17 +178,16 @@ $('#cancel').onclick = () => { pending = null; $('#form').classList.add('hide');
 cv.addEventListener('pointerdown', ev => {
   const r = cv.getBoundingClientRect(); const x = Math.round((ev.clientX - r.left) * cv.width / r.width), y = Math.round((ev.clientY - r.top) * cv.height / r.height);
   if (pending) { pending = { x, y }; $('#posInfo').textContent = `場所: 決めました（${x}, ${y}）`; $('#formTitle').textContent = '種類と一言を入れて送信'; msg(''); draw(); $('#text').focus(); return; }
-  // 印をタップ → 一覧を光らせる
   let best = null, bd = 22; posts.forEach(p => { if (p.x == null) return; const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = p; } });
   hi = best ? best.id : null; draw(); renderPosts(); if (best) { const li = document.querySelector(`li[data-id="${best.id}"]`); li && li.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 });
 async function sendPost(withPos) {
-  const text = $('#text').value.trim(); if (!text) { msg('一言を入れてください'); return; }
+  const text = $('#text').value.trim(); if (!text && !picked.pImg) { msg('一言か画像を入れてください'); return; }
   if (withPos && (!pending || pending.x == null)) { msg('先に地図をタップして場所を決めてください（場所なしで送るなら右のボタン）'); return; }
-  saveName($('#name').value.trim());
-  try { await S.add('board_' + MAP.id, { map: MAP.id, kind, text, name: $('#name').value.trim(), x: withPos ? pending.x : null, y: withPos ? pending.y : null }); }
-  catch (e) { msg('送れませんでした（置き場に届きません）'); return; }
-  $('#text').value = ''; pending = null; $('#form').classList.add('hide'); msg('書き込みました'); await refreshPosts();
+  saveName($('#name').value.trim()); $('#send').classList.add('busy');
+  try { let item = { map: MAP.id, kind, text: text || '（画像）', name: $('#name').value.trim(), x: withPos ? pending.x : null, y: withPos ? pending.y : null }; item = await attachImage(item, 'pImg'); await S.add('board_' + MAP.id, item); }
+  catch (e) { msg('送れませんでした（置き場に届きません）'); $('#send').classList.remove('busy'); return; }
+  $('#send').classList.remove('busy'); $('#text').value = ''; pending = null; $('#form').classList.add('hide'); msg('書き込みました'); await refreshPosts();
 }
 $('#send').onclick = () => sendPost(true); $('#noPos').onclick = () => sendPost(false);
 $('#text').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) sendPost(pending && pending.x != null); });
@@ -146,7 +198,7 @@ document.querySelectorAll('#effects .chip').forEach(b => b.onclick = () => { eff
 document.querySelector('#effects .chip[data-e="unknown"]').classList.add('on');
 document.querySelectorAll('#filter .chip').forEach(b => b.onclick = () => { filt = b.dataset.f; document.querySelectorAll('#filter .chip').forEach(x => x.classList.toggle('on', x === b)); renderNotes(); });
 const EFF = { yes: '効く', no: '効かない', unknown: '不明' };
-async function refreshNotes() { notes = await S.list('notes'); renderNotes(); }
+async function refreshNotes() { notes = await S.list('notes'); notes.forEach(n => n._col = 'notes'); renderNotes(); }
 function renderNotes() {
   const items = {}; for (const n of notes) (items[n.item || '（項目なし）'] ||= []).push(n);
   $('#items').innerHTML = Object.keys(items).map(k => `<option value="${S.esc(k)}">`).join('');
@@ -156,19 +208,19 @@ function renderNotes() {
     const rows = items[k].filter(n => filt === 'all' || n.effect === filt); if (!rows.length) continue;
     const cnt = { yes: 0, no: 0, unknown: 0 }; items[k].forEach(n => cnt[n.effect in cnt ? n.effect : 'unknown']++);
     html += `<div class="item">${S.esc(k)}<small>効く ${cnt.yes}・効かない ${cnt.no}・不明 ${cnt.unknown}</small></div><ul class="list">` +
-      rows.sort((a, b) => b.t - a.t).map(n => `<li><span class="badge ${n.effect in EFF ? n.effect : 'unknown'}">${EFF[n.effect] || '不明'}</span><div class="body"><div class="t">${S.esc(n.text)}</div><div class="meta">${S.esc(n.name || '名無し')}・${S.fmtTime(n.t)}</div></div>${n.dev === S.dev && !RO ? `<span class="x" data-ndel="${n.id}">✕</span>` : ''}</li>`).join('') + '</ul>';
+      rows.sort((a, b) => b.t - a.t).map(n => `<li data-nid="${n.id}"><div class="head"><span class="badge ${n.effect in EFF ? n.effect : 'unknown'}">${EFF[n.effect] || '不明'}</span><div class="body"><div class="t">${S.esc(n.text)}</div>${thumbHtml(n)}<div class="meta">${S.esc(n.name || '名無し')}・${S.fmtTime(n.t)}</div>${toolsHtml(n, n.dev === S.dev)}</div></div>${open.has(n.id) ? threadHtml(n.id) : ''}</li>`).join('') + '</ul>';
   }
   $('#notes').innerHTML = html || '<div class="hint" style="margin:12px 0">まだメモはありません。</div>';
 }
-$('#notes').addEventListener('click', async ev => { const id = ev.target.dataset.ndel; if (!id) return; if (!confirm('このメモを消しますか？')) return; await S.remove('notes', id); await refreshNotes(); });
 $('#nSend').onclick = async () => {
-  const item = $('#nItem').value.trim(), text = $('#nText').value.trim(); if (!item) { msg('項目を入れてください'); return; } if (!text) { msg('内容を入れてください'); return; }
-  saveName($('#nName').value.trim());
-  try { await S.add('notes', { item, effect, text, name: $('#nName').value.trim() }); } catch (e) { msg('送れませんでした（置き場に届きません）'); return; }
-  $('#nText').value = ''; msg('書き込みました'); await refreshNotes();
+  const item = $('#nItem').value.trim(), text = $('#nText').value.trim(); if (!item) { msg('項目を入れてください'); return; } if (!text && !picked.nImg) { msg('内容か画像を入れてください'); return; }
+  saveName($('#nName').value.trim()); $('#nSend').classList.add('busy');
+  try { let it = { item, effect, text: text || '（画像）', name: $('#nName').value.trim() }; it = await attachImage(it, 'nImg'); await S.add('notes', it); } catch (e) { msg('送れませんでした（置き場に届きません）'); $('#nSend').classList.remove('busy'); return; }
+  $('#nSend').classList.remove('busy'); $('#nText').value = ''; msg('書き込みました'); await refreshNotes();
 };
 
 // ---- タブ・更新 ----
+function renderAll() { renderPosts(); renderNotes(); }
 function tab(t) { $('#tabMap').classList.toggle('on', t === 'map'); $('#tabNotes').classList.toggle('on', t !== 'map'); $('#secMap').classList.toggle('hide', t !== 'map'); $('#secNotes').classList.toggle('hide', t === 'map'); try { localStorage.setItem('saz-board-tab', t); } catch (e) {} }
 $('#tabMap').onclick = () => tab('map'); $('#tabNotes').onclick = () => tab('notes');
 const q = new URLSearchParams(location.search);
@@ -176,7 +228,7 @@ await setMap(q.get('map') || DB.maps[0].id); await refreshNotes();
 let t0 = 'map'; try { t0 = q.get('tab') || localStorage.getItem('saz-board-tab') || 'map'; } catch (e) {} tab(t0);
 const refreshAll = () => { if (document.visibilityState === 'visible') { refreshPosts(); refreshNotes(); } };
 document.addEventListener('visibilitychange', refreshAll); setInterval(refreshAll, 30000);
-window.__board = { get ready() { return !!MAP; }, posts: () => posts, notes: () => notes };
+window.__board = { get ready() { return !!MAP; }, posts: () => posts, notes: () => notes, threads };
 })();
 </script>
 </body>

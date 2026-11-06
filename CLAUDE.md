@@ -16,7 +16,7 @@ HTML 1 枚（`index.html`）。見本パターンは生成スクリプトから�
 | `maps/*.jpg,png` | 下地の俯瞰図（原作サドンアタックの 2012 年ブログ画像。`maps/raw/` に元と出所） |
 | `tools/make_patterns.py` | 見本パターン（16 本）を地名から生成 → `patterns/*.json` と `patterns/index.json` |
 | `editor.html` | 移動時間エディター（点・通路・縮尺・武器切替・全地点間の表・PNG）。保存は `tools/save_server.py`（8843、常駐）→ `data/timemap/edits/<map>.json`。Pages では JSON ファイルで受け渡し |
-| `board.html` + `store.js` + `board-config.js` | クラン掲示板（スマホ向け）。地図の書き込み（⭐強ポジ/💨スモーク/⚠注意/👁待ち伏せ/💣爆弾/💥グレ/📝メモ を地図の場所に貼る）と検証メモ（項目ごとに 効く/効かない/不明）。置き場は store.js が自動で選ぶ: 手元 save_server（`data/board/<名前>.json`）→ board-config.js の Firebase URL → Pages は data/board の写しを読むだけ。印は editor の地図と PNG にも出る |
+| `board.html` + `store.js` + `board-config.js` | クラン掲示板（スマホ向け）。地図の書き込み（⭐強ポジ/💨スモーク/⚠注意/👁待ち伏せ/💣爆弾/💥グレ/📝メモ を地図の場所に貼る）と検証メモ（項目ごとに 効く/効かない/不明）。書き込みごとに返信スレッド（置き場 `rep_<書き込みid>`）と画像（縮小 JPEG。本文に thumb、本体は `img/<id>` に base64 で別置き・タップで取る）。置き場は store.js が自動で選ぶ: board-config.js の Firebase URL → 手元 save_server（`data/board/<名前>.json`）→ Pages は data/board の写しを読むだけ。印は editor の地図と PNG にも出る |
 | `stats.html` + `data/stats.json` | ステータス図鑑。武器の基本 5 項目とパーツのオプションの意味（推測は「たぶん」）・検証状況・実測・測り方・出典。掲示板の検証メモを項目名で突き合わせて下に出す。検証したら stats.json の `measured`/`status` を直す |
 | `tools/crosshair_timing.py` | 動画から「撃つ→クロスヘアが閉じ切る」までの秒数を測る（中央の線を色で拾って開きをコマごとに測る）。2 本渡すと比較も出す。合成動画で検証済み |
 | `tools/timemap_build.py` / `tools/export_timemap.py` | edits から表を再計算 → `data/timemap/<map>.json`、editor.html を使って武器別 PNG → `data/timemap/png/` |

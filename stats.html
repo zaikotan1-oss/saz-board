@@ -63,7 +63,7 @@ function render() {
         ${it.measured ? `<div class="measured"><b>実測</b> ${S.esc(it.measured)}</div>` : ''}
         <div class="row"><b>測り方</b>${S.esc(it.how)}</div>
         <div class="row src"><b>出典</b>${S.esc(it.source)}</div>
-        ${ns.length ? `<details open><summary>クランの検証メモ</summary><ul class="notes">${ns.sort((a, b) => b.t - a.t).map(n => `<li><span class="badge ${n.effect in LABEL ? n.effect : 'unknown'}">${LABEL[n.effect] || '不明'}</span> ${S.esc(n.text)}<div class="meta">${S.esc(n.name || '名無し')}・${S.fmtTime(n.t)}</div></li>`).join('')}</ul></details>` : ''}
+        ${ns.length ? `<details open><summary>クランの検証メモ</summary><ul class="notes">${ns.sort((a, b) => b.t - a.t).map(n => `<li><span class="badge ${n.effect in LABEL ? n.effect : 'unknown'}">${LABEL[n.effect] || '不明'}</span> ${S.esc(n.text)}${n.thumb ? `<br><img src="${n.thumb}" alt="" style="max-width:160px;max-height:120px;border-radius:6px;border:1px solid var(--line);margin-top:4px">` : ''}<div class="meta">${S.esc(n.name || '名無し')}・${S.fmtTime(n.t)}</div></li>`).join('')}</ul></details>` : ''}
       </div>`;
     }
   }
