@@ -53,7 +53,7 @@
   <div class="grp"><button data-mode="move" class="on">動かす</button><button data-mode="del" class="danger">消す</button></div>
   <div class="grp"><span class="t">縮尺</span><button data-mode="calib" class="cal">コースを打つ</button><span id="calinfo" class="t"></span></div>
   <div class="grp"><span class="t">秒数</span><select id="wsel"></select><label class="t"><input type="checkbox" id="showSec" checked> 線に秒数</label><label class="t"><input type="checkbox" id="showPins" checked> 書き込み</label></div>
-  <div class="grp"><button id="boardBtn" title="クランの掲示板（強ポジ・スモークなどの書き込みと検証メモ）">💬 掲示板</button><button id="statsBtn" title="武器のステータスとパーツのオプションの意味・検証結果">📖 ステータス図鑑</button></div>
+  <div class="grp"><button id="boardBtn" title="クランの掲示板（強ポジ・スモークなどの書き込みと検証メモ）">💬 掲示板</button><button id="treeBtn" title="作戦や検証を 大項目→中項目→小項目 のツリーで溜める（文と画像）">📚 作戦ノート</button><button id="statsBtn" title="武器のステータスとパーツのオプションの意味・検証結果">📖 ステータス図鑑</button></div>
   <div class="grp"><button id="save" class="save">保存</button><button id="dl">JSONファイル</button><button id="ul">JSON読む</button><input type="file" id="ulf" accept=".json" hidden></div>
   <div class="grp"><button id="png">PNG（この武器）</button><button id="pngall">PNG（全武器）</button></div>
   <div class="grp"><span class="t">下地</span><button id="bg" title="ゲーム内の全体図のスクショを下地にする（ドロップでも可）">画像を選ぶ</button><button id="bgReset" title="元の俯瞰図（無ければ格子）に戻す">戻す</button><input type="file" id="bgf" accept="image/*" hidden></div>
@@ -131,6 +131,7 @@
   <h2>掲示板（クランで共有）</h2>
   <ul>
     <li><span class="b">💬 掲示板</span> を押すと別のページが開く。<b>地図の書き込み</b>（⭐強ポジ・💨スモーク・⚠注意・👁待ち伏せ・💣爆弾・💥グレ・📝メモ を地図の場所に貼る）と <b>検証メモ</b>（「精度回復速度アップ」などが効くか効かないかを項目ごとに溜める）の 2 つ</li>
+    <li><span class="b">📚 作戦ノート</span> は「場所クロポA → Aロンからの3:3の攻め → 結論／仮説検証／設置場所…」のように<b>大項目→中項目→小項目</b>のツリーで文と画像を溜める所。だれでも足せて直せる</li>
     <li>貼った印はこの画面の地図にも出て、PNG にも入る。「書き込み」のチェックで隠せる</li>
     <li>スマホからも書ける（公開の置き場を設定してある時）</li>
   </ul>
@@ -316,6 +317,7 @@ $('#pngall').onclick = async () => { const keep = weapon; for (const w of IDX.we
 window.__ed = { exportDataURL, setWeapon: w => { weapon = w; $('#wsel').value = w; render(); }, load, get ready(){ return !!G && isReady; } };
 $('#mapSel').onchange = () => load($('#mapSel').value);
 $('#boardBtn').onclick = () => window.open(`board.html?map=${G.map}`, '_blank');
+$('#treeBtn').onclick = () => window.open(`tree.html?map=${G.map}`, '_blank');
 $('#statsBtn').onclick = () => window.open('stats.html', '_blank');
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && G) SazStore.list('board_' + G.map).then(p => { boardPosts = p; render(); }); });
 const helpBox = $('#helpBox'); const showHelp = on => helpBox.classList.toggle('show', on);

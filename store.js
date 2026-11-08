@@ -44,6 +44,13 @@ window.SazStore = (() => {
   }
   // 画像を置き場に入れて id を返す（本文には thumb だけ入れ、full は見る時に取る）
   async function putImage(full) { const r = await add('img', { text: 'img', data: full }); return r.id; }
+  // 1 件の一部を書き換える（ツリーのノードの直しなど）
+  async function update(col, id, patch) {
+    const m = await detect();
+    if (m === 'firebase') { const r = await fetch(`${CFG.firebase}/saz/${col}/${id}.json`, { method: 'PATCH', body: JSON.stringify(patch) }); if (!r.ok) throw new Error('update failed'); return true; }
+    if (m === 'local') { const r = await fetch(`${LOCAL}/kv?col=${col}&id=${id}`, { method: 'PATCH', body: JSON.stringify(patch) }); if (!r.ok) throw new Error('update failed'); return true; }
+    throw new Error('readonly');
+  }
   async function remove(col, id) {
     const m = await detect();
     if (m === 'firebase') { const r = await fetch(`${CFG.firebase}/saz/${col}/${id}.json`, { method: 'DELETE' }); return r.ok; }
@@ -88,5 +95,5 @@ window.SazStore = (() => {
   }
   const fmtTime = t => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
   const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-  return { detect, list, get, add, remove, imageFromFile, putImage, dev, KINDS, kindOf, drawPins, fmtTime, esc, get mode() { return mode; } };
+  return { detect, list, get, add, update, remove, imageFromFile, putImage, dev, KINDS, kindOf, drawPins, fmtTime, esc, get mode() { return mode; } };
 })();

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAZ 作戦ノート</title>
+<style>
+  :root { --bg:#1b1d22; --panel:#262930; --line:#3a3e48; --text:#e8e8ec; --sub:#9aa0ad; --acc:#f2b705; --ok:#2fd17a; --ng:#e05a5a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:"Yu Gothic UI","Meiryo",sans-serif; font-size:15px; }
+  header { display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+  header h1 { font-size:16px; margin:0; color:var(--acc); flex:1; } header a { color:var(--sub); font-size:13px; }
+  main { padding:10px 12px 80px; max-width:900px; margin:0 auto; }
+  select, input, textarea, button { background:#30343d; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:15px; font-family:inherit; }
+  button { cursor:pointer; } button.pri { background:#2a7a3a; font-weight:bold; } button.sm { padding:4px 8px; font-size:13px; }
+  input, textarea { width:100%; } textarea { min-height:110px; resize:vertical; font-family:inherit; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0; }
+  .hint { color:var(--sub); font-size:13px; }
+  .banner { background:#3a2f12; border:1px solid #6b5a1a; color:#ffe79a; border-radius:8px; padding:8px 10px; margin:8px 0; font-size:14px; }
+  #msg { color:var(--acc); font-size:14px; min-height:1.2em; }
+  .hide { display:none !important; }
+  .form { background:var(--panel); border:1px solid var(--acc); border-radius:10px; padding:10px; margin:8px 0; }
+  .form h3 { margin:0 0 6px; font-size:15px; color:var(--acc); }
+  .attach { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } .attach .pv { position:relative; display:inline-block; } .attach img { max-height:60px; border-radius:6px; border:1px solid var(--line); display:block; }
+  .attach .x { position:absolute; top:-6px; right:-6px; background:#000; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer; }
+  /* ツリー */
+  .node { margin:4px 0; }
+  .node .nhead { display:flex; align-items:flex-start; gap:6px; padding:6px 8px; background:var(--panel); border:1px solid var(--line); border-radius:8px; cursor:pointer; user-select:none; }
+  .node[data-d="0"] > .nhead { border-left:4px solid var(--acc); } .node[data-d="1"] > .nhead { border-left:4px solid #5c8ad6; } .node[data-d="2"] > .nhead { border-left:4px solid #2fd17a; } .node[data-d="3"] > .nhead, .node[data-d="4"] > .nhead, .node[data-d="5"] > .nhead { border-left:4px solid #9aa0ad; }
+  .node[data-d="0"] > .nhead .ttl { font-size:17px; }
+  .tg { width:22px; color:var(--sub); font-size:13px; flex:none; padding-top:3px; } .ttl { font-weight:bold; flex:1; word-break:break-word; } .cnt { color:var(--sub); font-size:12px; padding-top:3px; }
+  .nbody { margin:4px 0 4px 10px; padding-left:10px; border-left:2px solid var(--line); }
+  .nbody .t { white-space:pre-wrap; word-break:break-word; padding:4px 2px; } .nbody .t a { color:#8ab4ff; }
+  .imgs { display:flex; gap:6px; flex-wrap:wrap; margin:4px 0; } .imgs img { max-width:150px; max-height:110px; border-radius:6px; border:1px solid var(--line); cursor:zoom-in; }
+  .meta { color:var(--sub); font-size:12px; }
+  .tools { display:flex; gap:12px; margin:2px 0 6px; align-items:center; flex-wrap:wrap; } .tools button { background:none; border:none; color:var(--sub); padding:2px 4px; font-size:13px; } .tools button:hover { color:var(--acc); }
+  .kids { margin-top:2px; }
+  #overlay { position:fixed; inset:0; background:rgba(0,0,0,.9); display:none; align-items:center; justify-content:center; z-index:50; cursor:zoom-out; }
+  #overlay.show { display:flex; } #overlay img { max-width:96vw; max-height:92vh; border-radius:8px; }
+  .busy { opacity:.6; pointer-events:none; }
+  #help { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin:8px 0; font-size:14px; line-height:1.7; }
+  #help pre { background:#1b1d22; padding:8px; border-radius:6px; font-size:13px; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<header><h1>SAZ 作戦ノート</h1><a href="board.html">地図の掲示板</a><a href="stats.html">ステータス図鑑</a><button id="helpBtn" class="sm">？ 使い方</button></header>
+<main>
+  <div id="ro" class="banner hide">今は読むだけです（書ける置き場が設定されていません）。</div>
+  <div id="help" class="hide">
+    <b>作戦や検証を「大項目 → 中項目 → 小項目」のツリーで溜める場所</b>です。
+    <pre>例）場所クロポA
+ └ Aロンからの3:3の攻め
+    ├ 結論
+    ├ 仮説検証
+    │  ├ 敵3人
+    │  ├ 敵2人
+    │  └ 味方やられたとき
+    ├ 設置場所
+    ├ 設置後強ポジ
+    └ その他補足</pre>
+    ・「＋ 大項目を足す」で一番上の項目を作る。項目を開いて「＋ 下に足す」で中項目・小項目を何段でもぶら下げられる。<br>
+    ・文は改行・行の頭のスペース・「・」「-」がそのまま残るので、箇条書きのインデントもそのまま書ける。<br>
+    ・📷 で画像を何枚でも付けられる（自動で小さくする）。小さい絵をタップで拡大。<br>
+    ・項目の名前（太字）をタップすると開く／とじる。開きぐあいはこの端末に覚える。<br>
+    ・「✏ 直す」はだれでもできる（みんなで育てるノート）。「🗑 消す」は自分の端末で書いた物で、下に項目が無い物だけ。<br>
+    ・上の「マップ」で、そのマップの大項目だけに絞れる。大項目を足す時にマップを選んでおく。
+  </div>
+  <div id="msg"></div>
+  <div class="row"><select id="mapSel"><option value="">全部のマップ</option></select><button id="addRoot" class="pri">＋ 大項目を足す</button><button id="expAll" class="sm">全部ひらく</button><button id="colAll" class="sm">全部とじる</button></div>
+  <div id="rootForm"></div>
+  <div id="tree"></div>
+</main>
+<div id="overlay"><img id="ovImg" alt=""></div>
+<script src="board-config.js"></script>
+<script src="store.js"></script>
+<script>
+(async () => {
+const $ = s => document.querySelector(s); const S = window.SazStore; const COL = 'tree';
+const DB = await (await fetch('maps/maps.json?t=' + Date.now())).json();
+for (const m of DB.maps) { const o = document.createElement('option'); o.value = m.id; o.textContent = m.name; $('#mapSel').appendChild(o); }
+const mapName = id => (DB.maps.find(m => m.id === id) || {}).name || '';
+let nodes = [], byParent = {}, form = null, picked = [], keepImgs = [];
+const msg = t => { $('#msg').textContent = t; };
+const nameKey = 'saz-name'; const getName = () => { try { return localStorage.getItem(nameKey) || ''; } catch (e) { return ''; } };
+const saveName = v => { try { localStorage.setItem(nameKey, v); } catch (e) {} };
+let openState = {}; try { openState = JSON.parse(localStorage.getItem('saz-tree-open') || '{}'); } catch (e) {}
+const saveOpen = () => { try { localStorage.setItem('saz-tree-open', JSON.stringify(openState)); } catch (e) {} };
+const isOpen = (n, d) => n.id in openState ? !!openState[n.id] : d < 2;
+const mode = await S.detect(); const RO = mode === 'static';
+if (RO) { $('#ro').classList.remove('hide'); $('#addRoot').classList.add('hide'); }
+$('#helpBtn').onclick = () => $('#help').classList.toggle('hide');
+try { if (!localStorage.getItem('saz-tree-help-seen')) { $('#help').classList.remove('hide'); localStorage.setItem('saz-tree-help-seen', '1'); } } catch (e) {}
+
+// ---- 読み込み ----
+async function refresh() {
+  nodes = await S.list(COL); byParent = {};
+  for (const n of nodes) (byParent[n.parent || ''] ||= []).push(n);
+  render();
+}
+const kids = id => byParent[id] || [];
+const hasKids = id => kids(id).length > 0;
+const linkify = s => S.esc(s).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+
+// ---- 描画 ----
+function formHtml() {
+  const f = form; const isEdit = f.mode === 'edit'; const n = isEdit ? nodes.find(x => x.id === f.id) : null; const dr = f.draft || {};
+  const vTitle = dr.title ?? (n ? n.text : ''), vBody = dr.body ?? (n ? (n.body || '') : ''), vName = dr.name ?? getName(), vMap = dr.map ?? f.map;
+  const title = isEdit ? '直す' : (f.parent ? `「${S.esc((nodes.find(x => x.id === f.parent) || {}).text || '')}」の下に足す` : '大項目を足す');
+  const pv = keepImgs.map((im, i) => `<span class="pv"><img src="${im.thumb}" alt=""><span class="x" data-unkeep="${i}">✕</span></span>`).join('') + picked.map((p, i) => `<span class="pv"><img src="${p.thumb}" alt=""><span class="x" data-unpick="${i}">✕</span></span>`).join('');
+  return `<div class="form" id="form">
+    <h3>${title}</h3>
+    ${!isEdit && !f.parent ? `<div class="row"><span class="hint">マップ:</span><select id="fMap"><option value="">（どれでもない）</option>${DB.maps.map(m => `<option value="${m.id}" ${m.id === vMap ? 'selected' : ''}>${S.esc(m.name)}</option>`).join('')}</select></div>` : ''}
+    <div class="row"><input id="fTitle" placeholder="項目の名前（例: Aロンからの3:3の攻め）" value="${S.esc(vTitle)}"></div>
+    <div class="row"><textarea id="fBody" placeholder="内容。改行・行の頭のスペース・「・」はそのまま残ります。&#10;例:&#10;・まず煙を A ロンの角へ&#10;  ・2人目はその後ろ&#10;・結論: 3:3 なら先に…">${S.esc(vBody)}</textarea></div>
+    <div class="row attach"><button class="sm" data-pick="1">📷 画像を付ける（複数可）</button><input type="file" id="fImg" accept="image/*" multiple hidden>${pv}</div>
+    <div class="row"><input id="fName" placeholder="名前（表示されます）" style="max-width:200px" value="${S.esc(vName)}"><button id="fSend" class="pri">${isEdit ? '直した内容を保存' : '送信'}</button><button id="fCancel">やめる</button></div>
+  </div>`;
+}
+function nodeHtml(n, d) {
+  const ks = kids(n.id).sort((a, b) => (a.t || 0) - (b.t || 0)); const op = isOpen(n, d);
+  const imgs = (n.imgs || []).filter(Boolean);
+  const own = n.dev === S.dev;
+  const body = op ? `<div class="nbody">
+      ${n.body ? `<div class="t">${linkify(n.body)}</div>` : ''}
+      ${imgs.length ? `<div class="imgs">${imgs.map(im => `<img src="${im.thumb}" data-img="${im.id}" alt="">`).join('')}</div>` : ''}
+      <div class="meta">${S.esc(n.name || '名無し')}・${S.fmtTime(n.t)}${n.edited ? `（直し: ${S.esc(n.editor || '名無し')}・${S.fmtTime(n.edited)}）` : ''}${!d && n.map ? `・${S.esc(mapName(n.map))}` : ''}</div>
+      ${RO ? '' : `<div class="tools"><button data-add="${n.id}">＋ 下に足す</button><button data-edit="${n.id}">✏ 直す</button>${own && !ks.length ? `<button data-del="${n.id}">🗑 消す</button>` : ''}</div>`}
+      ${form && form.mode === 'edit' && form.id === n.id ? formHtml() : ''}
+      ${form && form.mode === 'add' && form.parent === n.id ? formHtml() : ''}
+      <div class="kids">${ks.map(k => nodeHtml(k, d + 1)).join('')}</div>
+    </div>` : '';
+  return `<div class="node" data-id="${n.id}" data-d="${Math.min(d, 5)}"><div class="nhead" data-tg="${n.id}"><span class="tg">${ks.length ? (op ? '▾' : '▸') : '•'}</span><span class="ttl">${S.esc(n.text)}</span>${!op && (ks.length || n.body || imgs.length) ? `<span class="cnt">${ks.length ? `下に ${ks.length}` : ''}${imgs.length ? ` 📷${imgs.length}` : ''}</span>` : ''}</div>${body}</div>`;
+}
+// 書きかけを覚えてから描き直す（画像を選んだ時などに入力が消えないように）
+function snap() { if (!form || !$('#form')) return; form.draft = { title: $('#fTitle').value, body: $('#fBody').value, name: $('#fName').value, map: $('#fMap') ? $('#fMap').value : undefined }; }
+function render() {
+  snap(); const mf = $('#mapSel').value;
+  const roots = kids('').filter(n => !mf || n.map === mf).sort((a, b) => (a.t || 0) - (b.t || 0));
+  $('#rootForm').innerHTML = form && form.mode === 'add' && !form.parent ? formHtml() : '';
+  $('#tree').innerHTML = roots.length ? roots.map(n => nodeHtml(n, 0)).join('') : `<div class="hint" style="margin:12px 0">まだ項目はありません。${RO ? '' : '「＋ 大項目を足す」から始めてください。'}</div>`;
+  const f = $('#form'); if (f && form && form.focus) { form.focus = false; f.scrollIntoView({ behavior: 'smooth', block: 'center' }); const ti = $('#fTitle'); ti && ti.focus(); }
+}
+
+// ---- 操作 ----
+function startForm(f) { form = { ...f, focus: true }; picked = []; keepImgs = f.mode === 'edit' ? [...((nodes.find(x => x.id === f.id) || {}).imgs || [])] : []; render(); }
+document.addEventListener('click', async ev => {
+  const t = ev.target; const ds = t.dataset;
+  if (t.closest('#form')) {
+    if (ds.pick) { $('#fImg').click(); return; }
+    if (ds.unpick != null) { picked.splice(+ds.unpick, 1); render(); return; }
+    if (ds.unkeep != null) { keepImgs.splice(+ds.unkeep, 1); render(); return; }
+    if (t.id === 'fCancel') { form = null; picked = []; render(); return; }
+    if (t.id === 'fSend') { await send(); return; }
+    return;
+  }
+  if (ds.img) { showFull(ds.img); return; }
+  if (ds.add) { const n = nodes.find(x => x.id === ds.add); if (n) { openState[n.id] = true; saveOpen(); } startForm({ mode: 'add', parent: ds.add }); return; }
+  if (ds.edit) { startForm({ mode: 'edit', id: ds.edit }); return; }
+  if (ds.del) { const n = nodes.find(x => x.id === ds.del); if (!n) return; if (hasKids(n.id)) { msg('下に項目があるので消せません'); return; } if (!confirm(`「${n.text}」を消しますか？`)) return; await S.remove(COL, n.id); msg('消しました'); await refresh(); return; }
+  const hd = t.closest('.nhead'); if (hd) { const id = hd.dataset.tg; const n = nodes.find(x => x.id === id); const d = +hd.parentElement.dataset.d; openState[id] = !isOpen(n, d); saveOpen(); render(); return; }
+});
+document.addEventListener('change', async ev => {
+  const inp = ev.target; if (inp.id !== 'fImg') return;
+  const files = [...inp.files]; inp.value = ''; if (!files.length) return;
+  try { for (const f of files) picked.push(await S.imageFromFile(f)); } catch (e) { msg('画像を読めませんでした'); }
+  render();
+});
+async function send() {
+  const title = $('#fTitle').value.trim(); const body = $('#fBody').value.replace(/\s+$/, ''); const name = $('#fName').value.trim();
+  if (!title) { msg('項目の名前を入れてください'); $('#fTitle').focus(); return; }
+  saveName(name); $('#fSend').classList.add('busy'); msg(picked.length ? '画像を送っています…' : '送っています…');
+  try {
+    const imgs = [...keepImgs]; for (const p of picked) { const id = await S.putImage(p.full); imgs.push({ id, thumb: p.thumb }); }
+    if (form.mode === 'edit') { await S.update(COL, form.id, { text: title, body, imgs, edited: Date.now(), editor: name }); msg('直しました'); }
+    else { const map = form.parent ? '' : ($('#fMap') ? $('#fMap').value : ''); const r = await S.add(COL, { text: title, body, parent: form.parent || '', map, imgs, name }); openState[r.id] = true; saveOpen(); msg('足しました'); }
+    form = null; picked = []; keepImgs = []; await refresh();
+  } catch (e) { msg('送れませんでした（置き場に届きません）'); const b = $('#fSend'); b && b.classList.remove('busy'); }
+}
+async function showFull(id) { $('#ovImg').src = ''; $('#overlay').classList.add('show'); const v = await S.get('img', id); if (v && v.data) $('#ovImg').src = v.data; else { $('#overlay').classList.remove('show'); msg('画像が取れませんでした'); } }
+$('#overlay').onclick = () => $('#overlay').classList.remove('show');
+$('#addRoot').onclick = () => startForm({ mode: 'add', parent: '', map: $('#mapSel').value });
+$('#expAll').onclick = () => { nodes.forEach(n => openState[n.id] = true); saveOpen(); render(); };
+$('#colAll').onclick = () => { nodes.forEach(n => openState[n.id] = false); saveOpen(); render(); };
+$('#mapSel').onchange = () => { try { localStorage.setItem('saz-tree-map', $('#mapSel').value); } catch (e) {} render(); };
+const q = new URLSearchParams(location.search); let m0 = q.get('map'); if (m0 == null) { try { m0 = localStorage.getItem('saz-tree-map') || ''; } catch (e) { m0 = ''; } }
+if ([...$('#mapSel').options].some(o => o.value === m0)) $('#mapSel').value = m0;
+await refresh();
+const auto = () => { if (document.visibilityState === 'visible' && !form) refresh(); };
+document.addEventListener('visibilitychange', auto); setInterval(auto, 30000);
+window.__tree = { get ready() { return true; }, nodes: () => nodes, get form() { return form; } };
+})();
+</script>
+</body>
+</html>
