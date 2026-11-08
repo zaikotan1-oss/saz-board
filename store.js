@@ -58,7 +58,26 @@ window.SazStore = (() => {
     return false;
   }
   // 地図の書き込みの種類（絵で分かるように）
+  // 上から見た「銃を構えた人」を描く（作戦ノートの大項目の印。本人の希望 11-08）
+  function drawSoldier(c, x, y, R) {
+    c.save(); c.translate(x, y); c.lineCap = 'round';
+    // 肩（横長）
+    c.fillStyle = '#1f2a3a'; c.beginPath(); c.ellipse(0, R * 0.05, R * 0.78, R * 0.42, 0, 0, Math.PI * 2); c.fill();
+    // 腕: 両肩から前へすぼまる
+    c.strokeStyle = '#e8d7b0'; c.lineWidth = Math.max(2, R * 0.22);
+    c.beginPath(); c.moveTo(-R * 0.6, 0); c.lineTo(-R * 0.12, -R * 0.62); c.stroke();
+    c.beginPath(); c.moveTo(R * 0.6, 0); c.lineTo(R * 0.14, -R * 0.78); c.stroke();
+    // 銃: 体の前から上へ（円の外まで少し出す）
+    c.strokeStyle = '#111'; c.lineWidth = Math.max(2, R * 0.2);
+    c.beginPath(); c.moveTo(R * 0.05, R * 0.15); c.lineTo(R * 0.05, -R * 1.25); c.stroke();
+    c.strokeStyle = '#444'; c.lineWidth = Math.max(1.5, R * 0.12); c.beginPath(); c.moveTo(R * 0.05, -R * 0.55); c.lineTo(R * 0.05, -R * 1.3); c.stroke();
+    // 頭
+    c.fillStyle = '#e8d7b0'; c.beginPath(); c.arc(0, 0, R * 0.36, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#2b2b2b'; c.beginPath(); c.arc(0, 0, R * 0.36, Math.PI * 1.05, Math.PI * 1.95); c.fill(); // 髪・ヘルメット
+    c.restore();
+  }
   const KINDS = [
+    { k: 'soldier', label: '作戦（人）', emoji: '🪖', color: '#2f7de1', draw: drawSoldier },
     { k: 'star', label: '強ポジ', emoji: '⭐', color: '#c99a00' },
     { k: 'smoke', label: 'スモーク', emoji: '💨', color: '#6b7280' },
     { k: 'warn', label: '注意', emoji: '⚠️', color: '#c0392b' },
@@ -68,6 +87,8 @@ window.SazStore = (() => {
     { k: 'memo', label: 'メモ', emoji: '📝', color: '#2f7de1' },
   ];
   const kindOf = k => KINDS.find(x => x.k === k) || KINDS[KINDS.length - 1];
+  // 印の絵を 1 つだけ描く（チップ等の見本用）
+  function drawPinIcon(c, kind, x, y, R) { const K = kindOf(kind); c.save(); c.beginPath(); c.arc(x, y, R, 0, Math.PI * 2); c.fillStyle = K.color; c.fill(); c.lineWidth = 2; c.strokeStyle = 'rgba(255,255,255,.85)'; c.stroke(); if (K.draw) K.draw(c, x, y, R); else { c.font = `${Math.round(R * 1.15)}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff'; c.fillText(K.emoji, x, y + 1); } c.restore(); }
   // 地図の上に印を描く（editor の PNG にも同じ物が入る）。posts: 位置つきの物だけ描く
   function drawPins(c, posts, opt = {}) {
     const R = opt.r || 14, hi = opt.highlight;
@@ -78,8 +99,8 @@ window.SazStore = (() => {
       c.beginPath(); c.arc(p.x, p.y, R + 2, 0, Math.PI * 2); c.fillStyle = 'rgba(0,0,0,.55)'; c.fill();
       c.beginPath(); c.arc(p.x, p.y, R, 0, Math.PI * 2); c.fillStyle = K.color; c.fill();
       c.lineWidth = hi === p.id ? 4 : 2; c.strokeStyle = hi === p.id ? '#fff' : 'rgba(255,255,255,.85)'; c.stroke();
-      c.font = `${Math.round(R * 1.15)}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillStyle = '#fff'; c.fillText(K.emoji, p.x, p.y + 1);
+      if (K.draw) K.draw(c, p.x, p.y, R);
+      else { c.font = `${Math.round(R * 1.15)}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff'; c.fillText(K.emoji, p.x, p.y + 1); }
       // 番号
       c.beginPath(); c.arc(p.x + R - 2, p.y - R + 2, 8, 0, Math.PI * 2); c.fillStyle = '#fff'; c.fill();
       c.font = 'bold 10px "Yu Gothic UI","Meiryo",sans-serif'; c.fillStyle = '#000'; c.fillText(String(i + 1), p.x + R - 2, p.y - R + 3);
@@ -95,5 +116,5 @@ window.SazStore = (() => {
   }
   const fmtTime = t => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
   const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-  return { detect, list, get, add, update, remove, imageFromFile, putImage, dev, KINDS, kindOf, drawPins, fmtTime, esc, get mode() { return mode; } };
+  return { detect, list, get, add, update, remove, imageFromFile, putImage, dev, KINDS, kindOf, drawPins, drawPinIcon, fmtTime, esc, get mode() { return mode; } };
 })();
