@@ -21,6 +21,7 @@
 | `tree.html` | 作戦ノート。マップを選ぶと地図が出て、**地図に印を打つとそれが大項目**（`x,y,kind`。印は上から見た銃を構えた人 `soldier`＝既定。印をタップでその大項目が開く・場所なしの大項目も可）。「大項目→中項目→小項目」のツリー（何段でも）に文（改行・インデントそのまま）と画像（複数・thumb＋`img/<id>`）をぶら下げる。置き場 `tree`（`parent` で親を指す平らな形。大項目だけ `map`）。直すのはだれでも（`update`＝PATCH）・消すのは自分の端末の分で下に項目が無い物だけ。開きぐあいは localStorage。クランの藤田さん・こうさくさんの要望の形（11-08）。11-09: **タグ**（置き場 `tags`＝名前と色、項目の `tags:[名前]`、何個でも・だれでも作れる）、**検索**（キーワード＋タグで全マップ・全階層を絞る → タップで飛ぶ。`?tag=赤` `?q=語` でも開ける）、**地名**（置き場 `places`＝`text,map,x,y`。maps.json の callouts を tools/seed_places.py で写した。地図の上に描き、タップでその地名の項目だけに絞る。「✏ 地名を直す」で名前・場所・追加・削除。大項目は `place` で地名を指す。印を打つと 45px 以内の地名が自動で付く）、並びは動きがあった順（新しい順・下の項目も含む） |
 | `videos.html` | 動画置き場。YouTube 限定公開の URL を貼る（置き場 `videos`＝`name,text,url,memo`）。投稿した人ごと（大項目）→ タイトル（中項目）。小さい絵をタップでページ内再生（youtube-nocookie の埋め込み・`t=` の頭出しも）。YouTube 以外はリンクだけ。直す・消すは自分の端末の分 |
 | `stats.html` + `data/stats.json` | ステータス図鑑。武器の基本 5 項目とパーツのオプションの意味（推測は「たぶん」）・検証状況・実測・測り方・出典。掲示板の検証メモを項目名で突き合わせて下に出す。検証したら stats.json の `measured`/`status` を直す |
+| `tools/seed_places.py` / `tools/import_line_notes.py` / `tools/line_inbox.py` | 地名を Firebase へ写す／クラン LINE のまとめを作戦ノートへ流し込む（11-09 実行済み・`--wipe` で入れ直し）／LINE の .txt をスマホから受け取る受け口（8870） |
 | `tools/crosshair_timing.py` | 動画から「撃つ→クロスヘアが閉じ切る」までの秒数を測る（中央の線を色で拾って開きをコマごとに測る）。2 本渡すと比較も出す。合成動画で検証済み |
 | `tools/timemap_build.py` / `tools/export_timemap.py` | edits から表を再計算 → `data/timemap/<map>.json`、editor.html を使って武器別 PNG → `data/timemap/png/` |
 | `tools/export_png.py` | 見本を全部 PNG に（Playwright のヘッドレス Chromium、8841 を一時的に使う） → `patterns/png/` |
