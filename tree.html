@@ -84,7 +84,7 @@
     ・項目を開いて「＋ 下に足す」で中項目・小項目を何段でも。文は改行・行の頭のスペース・「・」がそのまま残る（箇条書きのインデント可）。<br>
     ・📷 で画像を何枚でも（自動で小さくする）。小さい絵をタップで拡大。<br>
     ・並びは「動きがあった順（新しい順）」。項目の名前をタップすると開く／とじる。開きぐあいはこの端末に覚える。<br>
-    ・「✏ 直す」はだれでもできる（みんなで育てるノート）。「🗑 消す」は自分の端末で書いた物で、下に項目が無い物だけ。<br>
+    ・「✏ 直す」はだれでもできる（みんなで育てるノート）。「🗑 消す」は自分の端末で書いた物と、Claude が LINE から写した「LINE まとめ」の物（下に項目があればまとめて消える）。<br>
     ・俯瞰図が無いマップ（地下鉄・シティキャット等）は格子。エディターで下地を入れてあればここにも出る。
   </div>
   <div id="msg"></div>
@@ -130,6 +130,7 @@ function index() { byParent = {}; for (const n of nodes) (byParent[n.parent || '
 async function refresh() { [nodes, tags, places] = await Promise.all([S.list(COL), S.list('tags'), S.list('places')]); index(); render(); }
 const kids = id => (byParent[id] || []).slice().sort((a, b) => (a.t || 0) - (b.t || 0));
 const hasKids = id => kids(id).length > 0;
+const descendants = id => kids(id).flatMap(k => [k, ...descendants(k.id)]);
 // 動きがあった時刻（自分と下の項目の、新しい方）
 const act = n => Math.max(n.edited || 0, n.t || 0, ...kids(n.id).map(act));
 const tagOf = name => tags.find(t => t.text === name);
@@ -219,14 +220,14 @@ function formHtml() {
 function nodeHtml(n, d, pinNo) {
   const ks = kids(n.id); const op = isOpen(n, d);
   const imgs = (n.imgs || []).filter(Boolean);
-  const own = n.dev === S.dev;
+  const own = n.dev === S.dev || n.dev === 'claude-line';  // 自分の端末の分と、Claude が LINE から写した分はだれでも消せる
   const tg = (n.tags || []).length ? `<span class="tagsline">${n.tags.map(t => tagHtml(t)).join('')}</span>` : '';
   const pl = !d && n.place && placeOf(n.place);
   const body = op ? `<div class="nbody">
       ${n.body ? `<div class="t">${linkify(n.body)}</div>` : ''}
       ${imgs.length ? `<div class="imgs">${imgs.map(im => `<img src="${im.thumb}" data-img="${im.id}" alt="">`).join('')}</div>` : ''}
       <div class="meta">${S.esc(n.name || '名無し')}・${S.fmtTime(n.t)}${n.edited ? `（直し: ${S.esc(n.editor || '名無し')}・${S.fmtTime(n.edited)}）` : ''}${!d && n.map ? `・${S.esc(mapName(n.map))}${pl ? `・📍${S.esc(pl.text)}` : ''}${n.x != null ? '（地図に印）' : ''}` : ''}</div>
-      ${RO ? '' : `<div class="tools"><button data-add="${n.id}">＋ 下に足す</button><button data-edit="${n.id}">✏ 直す</button>${own && !ks.length ? `<button data-del="${n.id}">🗑 消す</button>` : ''}</div>`}
+      ${RO ? '' : `<div class="tools"><button data-add="${n.id}">＋ 下に足す</button><button data-edit="${n.id}">✏ 直す</button>${own ? `<button data-del="${n.id}">🗑 消す${ks.length ? `（下の ${descendants(n.id).length} 件ごと）` : ''}</button>` : ''}</div>`}
       ${form && form.mode === 'edit' && form.id === n.id ? formHtml() : ''}
       ${form && form.mode === 'add' && form.parent === n.id ? formHtml() : ''}
       <div class="kids">${ks.map(k => nodeHtml(k, d + 1)).join('')}</div>
@@ -345,7 +346,8 @@ document.addEventListener('click', async ev => {
   if (ds.img) { showFull(ds.img); return; }
   if (ds.add) { const n = nodes.find(x => x.id === ds.add); if (n) { openState[n.id] = true; saveOpen(); } startForm({ mode: 'add', parent: ds.add }); return; }
   if (ds.edit) { startForm({ mode: 'edit', id: ds.edit }); return; }
-  if (ds.del) { const n = nodes.find(x => x.id === ds.del); if (!n) return; if (hasKids(n.id)) { msg('下に項目があるので消せません'); return; } if (!confirm(`「${n.text}」を消しますか？`)) return; await S.remove(COL, n.id); msg('消しました'); await refresh(); return; }
+  if (ds.del) { const n = nodes.find(x => x.id === ds.del); if (!n) return; const ds2 = descendants(n.id); if (!confirm(`「${n.text}」を消しますか？${ds2.length ? `
+下の ${ds2.length} 件もいっしょに消えます。` : ''}`)) return; msg('消しています…'); for (const d of ds2) await S.remove(COL, d.id); await S.remove(COL, n.id); msg('消しました'); await refresh(); return; }
   const hd = t.closest('.nhead'); if (hd) { const id = hd.dataset.tg; const n = nodes.find(x => x.id === id); const d = +hd.parentElement.dataset.d; openState[id] = !isOpen(n, d); saveOpen(); if (!d) hi = (n.x != null) ? id : null; render(); return; }
 });
 $('#q').addEventListener('input', () => { qText = $('#q').value; render(); });
