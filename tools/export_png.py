@@ -25,7 +25,7 @@ with sync_playwright() as pw:
     pg = br.new_page(viewport={'width': 1400, 'height': 900})
     for it in index:
         if only and it['map'] != only: continue
-        pg.goto(f'http://127.0.0.1:{PORT}/index.html?pattern={it["file"]}&export=1')
+        pg.goto(f'http://127.0.0.1:{PORT}/pattern.html?pattern={it["file"]}&export=1')
         pg.wait_for_function('window.__board && window.__board.ready && window.__board.pat.pieces.length > 0')
         pg.wait_for_timeout(300)
         data = pg.evaluate('window.__board.exportDataURL(2)')

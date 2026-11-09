@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAZ 動画置き場</title>
+<style>
+  :root { --bg:#1b1d22; --panel:#262930; --line:#3a3e48; --text:#e8e8ec; --sub:#9aa0ad; --acc:#f2b705; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:"Yu Gothic UI","Meiryo",sans-serif; font-size:15px; }
+  header { display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+  header h1 { font-size:16px; margin:0; color:var(--acc); flex:1; } header a { color:var(--sub); font-size:13px; }
+  main { padding:10px 12px 80px; max-width:900px; margin:0 auto; }
+  input, textarea, button { background:#30343d; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:15px; font-family:inherit; }
+  button { cursor:pointer; } button.pri { background:#2a7a3a; font-weight:bold; } button.sm { padding:4px 8px; font-size:13px; }
+  input, textarea { width:100%; } textarea { min-height:60px; resize:vertical; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0; }
+  .hint { color:var(--sub); font-size:13px; }
+  .banner { background:#3a2f12; border:1px solid #6b5a1a; color:#ffe79a; border-radius:8px; padding:8px 10px; margin:8px 0; font-size:14px; }
+  #msg { color:var(--acc); font-size:14px; min-height:1.2em; }
+  .hide { display:none !important; }
+  .form { background:var(--panel); border:1px solid var(--acc); border-radius:10px; padding:10px; margin:8px 0; }
+  .form h3 { margin:0 0 6px; font-size:15px; color:var(--acc); }
+  .who { margin:10px 0; }
+  .who .wh { display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--acc); border-radius:8px; cursor:pointer; user-select:none; font-weight:bold; font-size:17px; }
+  .who .wh .cnt { color:var(--sub); font-size:12px; font-weight:normal; margin-left:auto; }
+  .vids { margin:4px 0 4px 10px; padding-left:10px; border-left:2px solid var(--line); }
+  .vid { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin:6px 0; }
+  .vid .vt { font-weight:bold; margin-bottom:4px; } .vid .memo { white-space:pre-wrap; color:#c9ccd4; font-size:14px; margin:4px 0; }
+  .vid .th { position:relative; display:block; width:100%; max-width:480px; aspect-ratio:16/9; background:#000; border-radius:8px; overflow:hidden; cursor:pointer; }
+  .vid .th img { width:100%; height:100%; object-fit:cover; display:block; } .vid .th .play { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:56px; color:#fff; text-shadow:0 2px 10px #000; }
+  .vid .player { width:100%; max-width:640px; aspect-ratio:16/9; border:0; border-radius:8px; display:block; background:#000; }
+  .vid .meta { color:var(--sub); font-size:12px; margin-top:4px; } .vid .meta a { color:#8ab4ff; }
+  .tools { display:flex; gap:12px; margin:4px 0 0; } .tools button { background:none; border:none; color:var(--sub); padding:2px 4px; font-size:13px; } .tools button:hover { color:var(--acc); }
+  .busy { opacity:.6; pointer-events:none; }
+  #help { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin:8px 0; font-size:14px; line-height:1.7; }
+</style>
+</head>
+<body>
+<header><h1>SAZ 動画置き場</h1><a href="index.html">トップ</a><a href="tree.html">作戦ノート</a><button id="helpBtn" class="sm">？ 使い方</button></header>
+<main>
+  <div id="ro" class="banner hide">今は読むだけです（書ける置き場が設定されていません）。</div>
+  <div id="help" class="hide">
+    <b>各自が YouTube に「限定公開」で上げた動画の URL を貼る場所</b>です。投稿した人ごとにまとまり（大項目）、その下にタイトルと URL（中項目）が並びます。<br>
+    ・YouTube で動画を「限定公開」にしてアップ → 「共有」の URL をコピー → ここの「＋ 動画を貼る」で名前・タイトル・URL を入れて送信。<br>
+    ・小さい絵をタップすると、このページの中でそのまま再生できます（YouTube の「埋め込みを許可」が切ってあると再生できないので、その時は YouTube で開くのリンクから）。<br>
+    ・YouTube 以外の URL（Twitch のクリップなど）も貼れます。その時はリンクだけになります。<br>
+    ・「✏ 直す」「🗑 消す」は自分の端末で貼った物だけ。
+  </div>
+  <div id="msg"></div>
+  <div class="row"><button id="addBtn" class="pri">＋ 動画を貼る</button><span class="hint">投稿した人ごとに並びます（新しい順）</span></div>
+  <div id="formBox"></div>
+  <div id="list"></div>
+</main>
+<script src="board-config.js"></script>
+<script src="store.js"></script>
+<script>
+(async () => {
+const $ = s => document.querySelector(s); const S = window.SazStore; const COL = 'videos';
+let items = [], form = null, playing = null;
+const msg = t => { $('#msg').textContent = t; };
+const nameKey = 'saz-name'; const getName = () => { try { return localStorage.getItem(nameKey) || ''; } catch (e) { return ''; } };
+const saveName = v => { try { localStorage.setItem(nameKey, v); } catch (e) {} };
+let closed = {}; try { closed = JSON.parse(localStorage.getItem('saz-videos-closed') || '{}'); } catch (e) {}
+const saveClosed = () => { try { localStorage.setItem('saz-videos-closed', JSON.stringify(closed)); } catch (e) {} };
+const mode = await S.detect(); const RO = mode === 'static';
+if (RO) { $('#ro').classList.remove('hide'); $('#addBtn').classList.add('hide'); }
+$('#helpBtn').onclick = () => $('#help').classList.toggle('hide');
+try { if (!localStorage.getItem('saz-videos-help-seen')) { $('#help').classList.remove('hide'); localStorage.setItem('saz-videos-help-seen', '1'); } } catch (e) {}
+// YouTube の URL から動画の id を取る（watch?v= / youtu.be/ / shorts/ / live/ / embed/）
+function ytId(u) { try { const url = new URL(u); const h = url.hostname.replace(/^www\.|^m\./, ''); if (h === 'youtu.be') return url.pathname.slice(1).split('/')[0] || null; if (h === 'youtube.com' || h === 'music.youtube.com') { if (url.searchParams.get('v')) return url.searchParams.get('v'); const m = url.pathname.match(/^\/(shorts|live|embed|v)\/([^/?]+)/); if (m) return m[2]; } } catch (e) {} return null; }
+const startSec = u => { try { const t = new URL(u).searchParams.get('t'); if (!t) return 0; const m = t.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/); return m ? (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0) : 0; } catch (e) { return 0; } };
+async function refresh() { items = await S.list(COL); render(); }
+function formHtml() {
+  const f = form; const n = f.id ? items.find(x => x.id === f.id) : null; const d = f.draft || {};
+  return `<div class="form" id="form"><h3>${n ? '直す' : '動画を貼る'}</h3>
+    <div class="row"><input id="fName" placeholder="名前（投稿した人。大項目になります）" style="max-width:260px" value="${S.esc(d.name ?? (n ? n.name : getName()))}"></div>
+    <div class="row"><input id="fTitle" placeholder="タイトル（例: 11/8 クロポ A 攻め 1R）" value="${S.esc(d.title ?? (n ? n.text : ''))}"></div>
+    <div class="row"><input id="fUrl" placeholder="YouTube の URL（限定公開でOK）" inputmode="url" value="${S.esc(d.url ?? (n ? n.url : ''))}"></div>
+    <div class="row"><textarea id="fMemo" placeholder="一言（見どころ・何分からなど。省略可）">${S.esc(d.memo ?? (n ? (n.memo || '') : ''))}</textarea></div>
+    <div class="row"><button id="fSend" class="pri">${n ? '直した内容を保存' : '送信'}</button><button id="fCancel">やめる</button></div></div>`;
+}
+function vidHtml(v) {
+  const id = ytId(v.url || ''); const own = v.dev === S.dev;
+  const media = id ? (playing === v.id ? `<iframe class="player" src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&start=${startSec(v.url)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>` : `<div class="th" data-play="${v.id}"><img src="https://img.youtube.com/vi/${id}/mqdefault.jpg" alt="" loading="lazy"><div class="play">▶</div></div>`) : '';
+  return `<div class="vid" data-id="${v.id}"><div class="vt">${S.esc(v.text)}</div>${media}${v.memo ? `<div class="memo">${S.esc(v.memo)}</div>` : ''}
+    <div class="meta">${S.fmtTime(v.t)}${v.edited ? `（直し ${S.fmtTime(v.edited)}）` : ''} ・ <a href="${S.esc(v.url)}" target="_blank" rel="noopener">${id ? 'YouTube で開く' : S.esc(v.url)}</a></div>
+    ${own && !RO ? `<div class="tools"><button data-edit="${v.id}">✏ 直す</button><button data-del="${v.id}">🗑 消す</button></div>` : ''}
+    ${form && form.id === v.id ? formHtml() : ''}</div>`;
+}
+function snap() { if (form && $('#form')) form.draft = { name: $('#fName').value, title: $('#fTitle').value, url: $('#fUrl').value, memo: $('#fMemo').value }; }
+function render() {
+  snap();
+  $('#formBox').innerHTML = form && !form.id ? formHtml() : '';
+  const by = {}; for (const v of items) (by[v.name || '名無し'] ||= []).push(v);
+  const groups = Object.entries(by).map(([name, vs]) => ({ name, vs: vs.sort((a, b) => (b.t || 0) - (a.t || 0)), last: Math.max(...vs.map(v => v.t || 0)) })).sort((a, b) => b.last - a.last);
+  $('#list').innerHTML = groups.length ? groups.map(g => `<div class="who"><div class="wh" data-who="${S.esc(g.name)}"><span>${closed[g.name] ? '▸' : '▾'}</span>👤 ${S.esc(g.name)}<span class="cnt">${g.vs.length} 本</span></div>${closed[g.name] ? '' : `<div class="vids">${g.vs.map(vidHtml).join('')}</div>`}</div>`).join('') : `<div class="hint" style="margin:12px 0">まだ動画はありません。${RO ? '' : '「＋ 動画を貼る」から。'}</div>`;
+  const f = $('#form'); if (f && form && form.focus) { form.focus = false; f.scrollIntoView({ behavior: 'smooth', block: 'center' }); ($('#fName').value ? $('#fTitle') : $('#fName')).focus(); }
+}
+document.addEventListener('click', async ev => {
+  const t = ev.target; const ds = t.dataset;
+  if (t.closest('#form')) {
+    if (t.id === 'fCancel') { form = null; msg(''); render(); return; }
+    if (t.id === 'fSend') { await send(); return; }
+    return;
+  }
+  const th = t.closest('[data-play]'); if (th) { playing = th.dataset.play; render(); return; }
+  const wh = t.closest('.wh'); if (wh) { const k = wh.dataset.who; closed[k] = !closed[k]; saveClosed(); render(); return; }
+  if (ds.edit) { form = { id: ds.edit, focus: true }; render(); return; }
+  if (ds.del) { const v = items.find(x => x.id === ds.del); if (!v) return; if (!confirm(`「${v.text}」を消しますか？`)) return; await S.remove(COL, v.id); msg('消しました'); await refresh(); return; }
+});
+async function send() {
+  const name = $('#fName').value.trim(), title = $('#fTitle').value.trim(), url = $('#fUrl').value.trim(), memo = $('#fMemo').value.replace(/\s+$/, '');
+  if (!name) { msg('名前を入れてください'); $('#fName').focus(); return; }
+  if (!title) { msg('タイトルを入れてください'); $('#fTitle').focus(); return; }
+  if (!/^https?:\/\//.test(url)) { msg('URL は https:// から入れてください'); $('#fUrl').focus(); return; }
+  snap(); saveName(name); $('#fSend').classList.add('busy'); msg('送っています…');
+  try {
+    if (form.id) { await S.update(COL, form.id, { name, text: title, url, memo, edited: Date.now() }); msg('直しました'); }
+    else { await S.add(COL, { name, text: title, url, memo }); closed[name] = false; saveClosed(); msg('貼りました'); }
+    form = null; await refresh();
+  } catch (e) { msg('送れませんでした（置き場に届きません）'); const b = $('#fSend'); b && b.classList.remove('busy'); }
+}
+$('#addBtn').onclick = () => { form = { id: null, focus: true }; render(); };
+await refresh();
+const auto = () => { if (document.visibilityState === 'visible' && !form) refresh(); };
+document.addEventListener('visibilitychange', auto); setInterval(auto, 30000);
+window.__videos = { ready: true, items: () => items, ytId };
+})();
+</script>
+</body>
+</html>

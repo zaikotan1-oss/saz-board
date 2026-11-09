@@ -25,6 +25,19 @@
   .form h3 { margin:0 0 6px; font-size:15px; color:var(--acc); }
   .attach { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } .attach .pv { position:relative; display:inline-block; } .attach img { max-height:60px; border-radius:6px; border:1px solid var(--line); display:block; }
   .attach .x { position:absolute; top:-6px; right:-6px; background:#000; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer; }
+  /* タグ */
+  .tag { display:inline-block; border-radius:999px; padding:1px 9px; font-size:12px; font-weight:bold; color:#fff; border:2px solid transparent; line-height:1.5; white-space:nowrap; }
+  .tag.off { background:transparent !important; opacity:.75; } .tagbtn { cursor:pointer; user-select:none; }
+  .tagsline { display:inline-flex; gap:4px; flex-wrap:wrap; vertical-align:middle; margin-left:4px; }
+  .sw { width:22px; height:22px; border-radius:50%; border:2px solid transparent; cursor:pointer; display:inline-block; } .sw.on { border-color:#fff; box-shadow:0 0 0 2px #000; }
+  /* 検索 */
+  #searchBox { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:8px 10px; margin:8px 0; }
+  #searchBox input { padding:7px 10px; }
+  .res { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin:6px 0; cursor:pointer; } .res:hover { border-color:var(--acc); }
+  .res .path { color:var(--sub); font-size:12px; } .res .rt { font-weight:bold; } .res .sn { color:#c9ccd4; font-size:13px; white-space:pre-wrap; }
+  /* 地名 */
+  #placeBar { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; } #placeBar .pl { padding:3px 9px; font-size:13px; border-radius:999px; }
+  #placeBar .pl.on { background:#2f7de1; border-color:#2f7de1; color:#fff; font-weight:bold; }
   /* ツリー */
   .node { margin:4px 0; }
   .node .nhead { display:flex; align-items:flex-start; gap:6px; padding:6px 8px; background:var(--panel); border:1px solid var(--line); border-radius:8px; cursor:pointer; user-select:none; }
@@ -48,7 +61,7 @@
 </style>
 </head>
 <body>
-<header><h1>SAZ 作戦ノート</h1><a href="board.html">地図の掲示板</a><a href="stats.html">ステータス図鑑</a><button id="helpBtn" class="sm">？ 使い方</button></header>
+<header><h1>SAZ 作戦ノート</h1><a href="index.html">トップ</a><a href="board.html">地図の掲示板</a><a href="videos.html">動画</a><button id="helpBtn" class="sm">？ 使い方</button></header>
 <main>
   <div id="ro" class="banner hide">今は読むだけです（書ける置き場が設定されていません）。</div>
   <div id="help" class="hide">
@@ -65,17 +78,28 @@
     └ その他補足</pre>
     ・上でマップを選ぶ → 「＋ 地図に印を打って大項目」 → 地図をタップして場所を決める → 印の種類と名前を入れて送信。場所なしの大項目も作れる。<br>
     ・地図の印をタップすると、その大項目が開いて飛ぶ。大項目をタップすると地図の印が光る。<br>
+    ・<b>地名（呼称）</b>は地図の上の文字。地名をタップ（地図でも、下の並びでも）すると、その場所の項目だけに絞る。「✏ 地名を直す」で名前の変更・移動・追加・削除ができる（みんなで直せる）。<br>
+    ・<b>タグ</b>は項目ごとに何個でも（赤・青・AR/SR・スモーク など）。色つき。「＋ 新しいタグ」でだれでも作れる。<br>
+    ・<b>検索</b>はキーワードとタグで、全マップの全部の項目から探す（例: タグ「赤」で全マップの赤の書き込み）。<br>
     ・項目を開いて「＋ 下に足す」で中項目・小項目を何段でも。文は改行・行の頭のスペース・「・」がそのまま残る（箇条書きのインデント可）。<br>
     ・📷 で画像を何枚でも（自動で小さくする）。小さい絵をタップで拡大。<br>
-    ・項目の名前をタップすると開く／とじる。開きぐあいはこの端末に覚える。<br>
-    ・「✏ 直す」はだれでもできる（みんなで育てるノート。大項目は場所の打ち直しも）。「🗑 消す」は自分の端末で書いた物で、下に項目が無い物だけ。<br>
+    ・並びは「動きがあった順（新しい順）」。項目の名前をタップすると開く／とじる。開きぐあいはこの端末に覚える。<br>
+    ・「✏ 直す」はだれでもできる（みんなで育てるノート）。「🗑 消す」は自分の端末で書いた物で、下に項目が無い物だけ。<br>
     ・俯瞰図が無いマップ（地下鉄・シティキャット等）は格子。エディターで下地を入れてあればここにも出る。
   </div>
   <div id="msg"></div>
+  <div id="searchBox">
+    <div class="row" style="margin:0"><input id="q" placeholder="🔍 キーワードで探す（全マップ・全部の項目から）" style="flex:1;min-width:160px"><button id="qClear" class="sm hide">✕ 検索をやめる</button></div>
+    <div class="row" style="margin:6px 0 0"><span class="hint">タグで絞る:</span><span id="tagFilter" class="tagsline"></span></div>
+  </div>
+  <div id="results" class="hide"></div>
+  <div id="normal">
   <div class="row"><select id="mapSel"><option value="">全部のマップ（地図なし）</option></select><button id="addRoot" class="pri">＋ 地図に印を打って大項目</button><button id="expAll" class="sm">全部ひらく</button><button id="colAll" class="sm">全部とじる</button></div>
-  <div id="stage" class="hide"><canvas id="cv"></canvas><div class="hint" id="mapHint"></div></div>
+  <div id="stage" class="hide"><canvas id="cv"></canvas><div class="row" style="margin:4px 0"><span class="hint" id="mapHint" style="flex:1"></span><button id="peditBtn" class="sm">✏ 地名を直す</button></div><div id="placeBar"></div><div id="placeForm"></div></div>
+  <div id="placeFilter" class="banner hide"></div>
   <div id="rootForm"></div>
   <div id="tree"></div>
+  </div>
 </main>
 <div id="overlay"><img id="ovImg" alt=""></div>
 <script src="board-config.js"></script>
@@ -87,7 +111,9 @@ const DB = await (await fetch('maps/maps.json?t=' + Date.now())).json();
 for (const m of DB.maps) { const o = document.createElement('option'); o.value = m.id; o.textContent = m.name; $('#mapSel').appendChild(o); }
 const mapName = id => (DB.maps.find(m => m.id === id) || {}).name || '';
 const cv = $('#cv'), ctx = cv.getContext('2d');
+const PAL = ['#e05a5a', '#2f7de1', '#2fd17a', '#f2b705', '#9b59b6', '#e67e22', '#1abc9c', '#95a5a6', '#ff69b4', '#8d6e63'];
 let nodes = [], byParent = {}, form = null, picked = [], keepImgs = [], MAP = null, img = null, hi = null;
+let tags = [], places = [], selPlace = null, pedit = false, pform = null, qText = '', qTags = [];
 const msg = t => { $('#msg').textContent = t; };
 const nameKey = 'saz-name'; const getName = () => { try { return localStorage.getItem(nameKey) || ''; } catch (e) { return ''; } };
 const saveName = v => { try { localStorage.setItem(nameKey, v); } catch (e) {} };
@@ -95,52 +121,80 @@ let openState = {}; try { openState = JSON.parse(localStorage.getItem('saz-tree-
 const saveOpen = () => { try { localStorage.setItem('saz-tree-open', JSON.stringify(openState)); } catch (e) {} };
 const isOpen = (n, d) => n.id in openState ? !!openState[n.id] : d < 2;
 const mode = await S.detect(); const RO = mode === 'static';
-if (RO) { $('#ro').classList.remove('hide'); $('#addRoot').classList.add('hide'); }
+if (RO) { $('#ro').classList.remove('hide'); $('#addRoot').classList.add('hide'); $('#peditBtn').classList.add('hide'); }
 $('#helpBtn').onclick = () => $('#help').classList.toggle('hide');
 try { if (!localStorage.getItem('saz-tree-help-seen')) { $('#help').classList.remove('hide'); localStorage.setItem('saz-tree-help-seen', '1'); } } catch (e) {}
 
 // ---- 読み込み ----
-async function refresh() {
-  nodes = await S.list(COL); byParent = {};
-  for (const n of nodes) (byParent[n.parent || ''] ||= []).push(n);
-  render();
-}
+function index() { byParent = {}; for (const n of nodes) (byParent[n.parent || ''] ||= []).push(n); }
+async function refresh() { [nodes, tags, places] = await Promise.all([S.list(COL), S.list('tags'), S.list('places')]); index(); render(); }
 const kids = id => (byParent[id] || []).slice().sort((a, b) => (a.t || 0) - (b.t || 0));
 const hasKids = id => kids(id).length > 0;
-const roots = () => { const mf = $('#mapSel').value; return kids('').filter(n => !mf || n.map === mf); };
+// 動きがあった時刻（自分と下の項目の、新しい方）
+const act = n => Math.max(n.edited || 0, n.t || 0, ...kids(n.id).map(act));
+const tagOf = name => tags.find(t => t.text === name);
+const tagColor = name => (tagOf(name) || {}).color || '#6b7280';
+const tagHtml = (name, extra = '') => `<span class="tag ${extra}" style="background:${tagColor(name)};border-color:${tagColor(name)}" data-tagname="${S.esc(name)}">${S.esc(name)}</span>`;
+// 地名: 置き場に無いマップは maps.json の地名を見せる（直すと置き場に写す）
+const mapPlaces = () => { if (!MAP) return []; const ps = places.filter(p => p.map === MAP.id); if (ps.length) return ps; return (MAP.callouts || []).map((c, i) => ({ id: 'c' + i, text: c[0], x: c[1], y: c[2], map: MAP.id, seed: true })); };
+const placeOf = id => mapPlaces().find(p => p.id === id);
+const nearPlace = (x, y) => { let b = null, bd = 45; mapPlaces().forEach(p => { const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; b = p; } }); return b; };
+const inPlace = (n, p) => n.place === p.id || (!n.place && n.x != null && Math.hypot(n.x - p.x, n.y - p.y) < 45);
+const roots = () => { const mf = $('#mapSel').value; let rs = kids('').filter(n => !mf || n.map === mf); const p = selPlace && placeOf(selPlace); if (p) rs = rs.filter(n => inPlace(n, p)); return rs.sort((a, b) => act(b) - act(a)); };
 const pinned = () => MAP ? roots().filter(n => n.x != null && n.y != null) : [];   // 地図の印（番号はこの順）
 const linkify = s => S.esc(s).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
 
 // ---- 地図 ----
 const loadImg = src => new Promise((ok, ng) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ng; i.src = src; });
 async function setMap(id) {
-  MAP = DB.maps.find(m => m.id === id) || null; img = null; hi = null;
+  MAP = DB.maps.find(m => m.id === id) || null; img = null; hi = null; selPlace = null; pedit = false; pform = null;
   $('#stage').classList.toggle('hide', !MAP); $('#addRoot').textContent = MAP ? '＋ 地図に印を打って大項目' : '＋ 大項目を足す';
   if (MAP) {
     cv.width = MAP.w || 800; cv.height = MAP.h || 600;
     try { const d = localStorage.getItem('saz-board-bg-' + MAP.id); if (d) img = await loadImg(d); } catch (e) {}
     if (!img && MAP.image) { try { img = await loadImg(MAP.image); } catch (e) { img = null; } }
-    $('#mapHint').textContent = img ? '印をタップすると、その大項目が開きます' : '俯瞰図が無いマップ（格子）。印をタップすると、その大項目が開きます';
   }
   render();
 }
+function placeBox(p) { ctx.font = 'bold 12px "Yu Gothic UI","Meiryo",sans-serif'; const w = ctx.measureText(p.text).width + 10; return { x: p.x - w / 2, y: p.y - 9, w, h: 18 }; }
 function draw() {
   if (!MAP) return;
   const W = cv.width, H = cv.height; ctx.fillStyle = '#2b2e36'; ctx.fillRect(0, 0, W, H);
   if (img) { const s = Math.min(W / img.width, H / img.height), dw = img.width * s, dh = img.height * s; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh); }
   else { ctx.strokeStyle = '#3c404a'; for (let x = 0; x < W; x += 50) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); } for (let y = 0; y < H; y += 50) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); } }
-  S.drawPins(ctx, pinned(), { highlight: hi });
+  // 地名
+  for (const p of mapPlaces()) {
+    const b = placeBox(p); const on = selPlace === p.id || (pform && pform.id === p.id);
+    ctx.fillStyle = on ? '#2f7de1' : (pedit ? 'rgba(242,183,5,.85)' : 'rgba(0,0,0,.6)'); ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 4); ctx.fill();
+    if (on) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); }
+    ctx.fillStyle = pedit && !on ? '#000' : '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(p.text, p.x, p.y + 1);
+  }
+  if (!pedit) S.drawPins(ctx, pinned(), { highlight: hi });
   if (form && form.pos && form.pos.x != null && (form.mode === 'add' || form.isRoot)) { S.drawPinIcon(ctx, form.kind, form.pos.x, form.pos.y, 14); ctx.beginPath(); ctx.arc(form.pos.x, form.pos.y, 19, 0, Math.PI * 2); ctx.strokeStyle = '#fff'; ctx.setLineDash([4, 4]); ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]); }
+  if (pform && pform.pos) { ctx.beginPath(); ctx.arc(pform.pos.x, pform.pos.y, 10, 0, Math.PI * 2); ctx.strokeStyle = '#fff'; ctx.setLineDash([3, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]); }
 }
+const hitPlace = (x, y) => mapPlaces().find(p => { const b = placeBox(p); return x >= b.x - 4 && x <= b.x + b.w + 4 && y >= b.y - 4 && y <= b.y + b.h + 4; });
 cv.addEventListener('pointerdown', ev => {
   const r = cv.getBoundingClientRect(); const x = Math.round((ev.clientX - r.left) * cv.width / r.width), y = Math.round((ev.clientY - r.top) * cv.height / r.height);
-  if (form && form.placing) { form.pos = { x, y }; form.placing = false; msg(''); render(); const t = $('#fTitle'); t && t.focus(); return; }
+  if (pedit) { // 地名の編集
+    if (pform && pform.placing) { pform.pos = { x, y }; pform.placing = false; render(); return; }
+    const p = hitPlace(x, y);
+    if (p) pform = { id: p.id, text: p.text, origText: p.text, pos: { x: p.x, y: p.y }, seed: !!p.seed }; else pform = { id: null, text: '', pos: { x, y } };
+    render(); const t = $('#pName'); t && t.focus(); return;
+  }
+  if (form && form.placing) { form.pos = { x, y }; form.placing = false; const np = nearPlace(x, y); form.place = np ? np.id : ''; const sel = $('#fPlace'); if (sel) sel.value = form.place; msg(''); render(); const t = $('#fTitle'); t && t.focus(); return; }
   let best = null, bd = 22; pinned().forEach(p => { const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = p; } });
-  hi = best ? best.id : null; if (best) openState[best.id] = true; saveOpen(); render();
-  if (best) { const el = document.querySelector(`.node[data-id="${best.id}"]`); el && el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  if (best) { hi = best.id; openState[best.id] = true; saveOpen(); render(); const el = document.querySelector(`.node[data-id="${best.id}"]`); el && el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+  const p = hitPlace(x, y); if (p) { selPlace = selPlace === p.id ? null : p.id; hi = null; render(); return; }
+  hi = null; render();
 });
 
 // ---- 描画 ----
+function tagPicker(sel) {
+  const f = form; const nt = f.newTag || {};
+  return `<div class="row"><span class="hint">タグ:</span><span class="tagsline">${tags.map(t => tagHtml(t.text, 'tagbtn ' + (sel.includes(t.text) ? '' : 'off'))).join('') || '<span class="hint">（まだ無い）</span>'}</span></div>
+    <div class="row"><input id="fNewTag" placeholder="＋ 新しいタグ（例: 赤、AR、スモーク）" style="max-width:220px" value="${S.esc(nt.text || '')}"><span class="tagsline">${PAL.map(c => `<span class="sw ${(nt.color || PAL[0]) === c ? 'on' : ''}" style="background:${c}" data-sw="${c}"></span>`).join('')}</span><button class="sm" data-addtag="1">タグを作る</button></div>`;
+}
 function formHtml() {
   const f = form; const isEdit = f.mode === 'edit'; const n = isEdit ? nodes.find(x => x.id === f.id) : null; const dr = f.draft || {};
   const vTitle = dr.title ?? (n ? n.text : ''), vBody = dr.body ?? (n ? (n.body || '') : ''), vName = dr.name ?? getName(), vMap = dr.map ?? f.map;
@@ -149,13 +203,15 @@ function formHtml() {
   const rootMap = f.isRoot && (isEdit ? !!n && !!n.map && MAP && n.map === MAP.id : !!MAP);
   const pos = f.pos && f.pos.x != null;
   const place = rootMap ? `<div class="row"><span class="hint">印:</span><div class="chips">${S.KINDS.map(K => `<button class="chip ${f.kind === K.k ? 'on' : ''}" data-kind="${K.k}" style="border-color:${K.color}"><canvas class="kico" data-k="${K.k}" width="26" height="26"></canvas>${K.label}</button>`).join('')}</div></div>
-    <div class="row"><span class="hint">${f.placing ? '👆 地図をタップして場所を決めてください' : (pos ? `場所: 決めました（${f.pos.x}, ${f.pos.y}）` : '場所: なし')}</span><button class="sm" data-place="1">📍 ${pos ? '場所を打ち直す' : '地図をタップして場所を決める'}</button>${pos ? '<button class="sm" data-unplace="1">場所を外す</button>' : ''}</div>` : '';
+    <div class="row"><span class="hint">${f.placing ? '👆 地図をタップして場所を決めてください' : (pos ? `場所: 決めました（${f.pos.x}, ${f.pos.y}）` : '場所: なし')}</span><button class="sm" data-place="1">📍 ${pos ? '場所を打ち直す' : '地図をタップして場所を決める'}</button>${pos ? '<button class="sm" data-unplace="1">場所を外す</button>' : ''}</div>
+    <div class="row"><span class="hint">地名:</span><select id="fPlace"><option value="">（どこでもない）</option>${mapPlaces().map(p => `<option value="${p.id}" ${p.id === f.place ? 'selected' : ''}>${S.esc(p.text)}</option>`).join('')}</select></div>` : '';
   return `<div class="form" id="form">
     <h3>${title}</h3>
     ${!isEdit && f.isRoot && !MAP ? `<div class="row"><span class="hint">マップ:</span><select id="fMap"><option value="">（どれでもない）</option>${DB.maps.map(m => `<option value="${m.id}" ${m.id === vMap ? 'selected' : ''}>${S.esc(m.name)}</option>`).join('')}</select></div>` : ''}
     ${place}
     <div class="row"><input id="fTitle" placeholder="${f.isRoot ? '大項目の名前（例: 場所クロポA）' : '項目の名前（例: Aロンからの3:3の攻め）'}" value="${S.esc(vTitle)}"></div>
     <div class="row"><textarea id="fBody" placeholder="内容。改行・行の頭のスペース・「・」はそのまま残ります。&#10;例:&#10;・まず煙を A ロンの角へ&#10;  ・2人目はその後ろ&#10;・結論: 3:3 なら先に…">${S.esc(vBody)}</textarea></div>
+    ${tagPicker(f.tags || [])}
     <div class="row attach"><button class="sm" data-pick="1">📷 画像を付ける（複数可）</button><input type="file" id="fImg" accept="image/*" multiple hidden>${pv}</div>
     <div class="row"><input id="fName" placeholder="名前（表示されます）" style="max-width:200px" value="${S.esc(vName)}"><button id="fSend" class="pri">${isEdit ? '直した内容を保存' : (rootMap && !pos ? '場所なしで送信' : '送信')}</button><button id="fCancel">やめる</button></div>
   </div>`;
@@ -164,25 +220,56 @@ function nodeHtml(n, d, pinNo) {
   const ks = kids(n.id); const op = isOpen(n, d);
   const imgs = (n.imgs || []).filter(Boolean);
   const own = n.dev === S.dev;
-  const K = pinNo ? S.kindOf(n.kind) : null;
+  const tg = (n.tags || []).length ? `<span class="tagsline">${n.tags.map(t => tagHtml(t)).join('')}</span>` : '';
+  const pl = !d && n.place && placeOf(n.place);
   const body = op ? `<div class="nbody">
       ${n.body ? `<div class="t">${linkify(n.body)}</div>` : ''}
       ${imgs.length ? `<div class="imgs">${imgs.map(im => `<img src="${im.thumb}" data-img="${im.id}" alt="">`).join('')}</div>` : ''}
-      <div class="meta">${S.esc(n.name || '名無し')}・${S.fmtTime(n.t)}${n.edited ? `（直し: ${S.esc(n.editor || '名無し')}・${S.fmtTime(n.edited)}）` : ''}${!d && n.map ? `・${S.esc(mapName(n.map))}${n.x != null ? '（地図に印）' : ''}` : ''}</div>
+      <div class="meta">${S.esc(n.name || '名無し')}・${S.fmtTime(n.t)}${n.edited ? `（直し: ${S.esc(n.editor || '名無し')}・${S.fmtTime(n.edited)}）` : ''}${!d && n.map ? `・${S.esc(mapName(n.map))}${pl ? `・📍${S.esc(pl.text)}` : ''}${n.x != null ? '（地図に印）' : ''}` : ''}</div>
       ${RO ? '' : `<div class="tools"><button data-add="${n.id}">＋ 下に足す</button><button data-edit="${n.id}">✏ 直す</button>${own && !ks.length ? `<button data-del="${n.id}">🗑 消す</button>` : ''}</div>`}
       ${form && form.mode === 'edit' && form.id === n.id ? formHtml() : ''}
       ${form && form.mode === 'add' && form.parent === n.id ? formHtml() : ''}
       <div class="kids">${ks.map(k => nodeHtml(k, d + 1)).join('')}</div>
     </div>` : '';
-  return `<div class="node ${hi === n.id ? 'hi' : ''}" data-id="${n.id}" data-d="${Math.min(d, 5)}"><div class="nhead" data-tg="${n.id}"><span class="tg">${ks.length ? (op ? '▾' : '▸') : '•'}</span>${pinNo ? `<span class="num">${pinNo}</span><canvas class="kico" data-k="${n.kind || 'soldier'}" width="26" height="26"></canvas>` : ''}<span class="ttl">${S.esc(n.text)}</span>${!op && (ks.length || n.body || imgs.length) ? `<span class="cnt">${ks.length ? `下に ${ks.length}` : ''}${imgs.length ? ` 📷${imgs.length}` : ''}</span>` : ''}</div>${body}</div>`;
+  return `<div class="node ${hi === n.id ? 'hi' : ''}" data-id="${n.id}" data-d="${Math.min(d, 5)}"><div class="nhead" data-tg="${n.id}"><span class="tg">${ks.length ? (op ? '▾' : '▸') : '•'}</span>${pinNo ? `<span class="num">${pinNo}</span><canvas class="kico" data-k="${n.kind || 'soldier'}" width="26" height="26"></canvas>` : ''}<span class="ttl">${S.esc(n.text)}${tg}</span>${!op && (ks.length || n.body || imgs.length) ? `<span class="cnt">${ks.length ? `下に ${ks.length}` : ''}${imgs.length ? ` 📷${imgs.length}` : ''}</span>` : ''}</div>${body}</div>`;
+}
+function placeFormHtml() {
+  if (!pedit) return '';
+  if (!pform) return `<div class="hint" style="margin:4px 0">✏ 地名の編集中: 地図の<b>何も無い所</b>をタップで地名を足す／<b>地名</b>をタップで直す・動かす・消す。<button class="sm" data-pdone="1">おわり</button></div>`;
+  return `<div class="form" id="pf"><h3>${pform.id ? '地名を直す' : '地名を足す'}</h3>
+    <div class="row"><input id="pName" placeholder="地名（例: Aロン）" value="${S.esc(pform.text)}" style="max-width:240px"><span class="hint">${pform.placing ? '👆 地図をタップして新しい場所を' : `場所: (${pform.pos.x}, ${pform.pos.y})`}</span><button class="sm" data-pmove="1">📍 場所を打ち直す</button></div>
+    <div class="row"><button class="pri" data-psave="1">保存</button>${pform.id ? '<button data-pdel="1">🗑 消す</button>' : ''}<button data-pcancel="1">やめる</button>${pform.seed ? '<span class="hint">（元からの地名。保存するとこのマップの地名を全部みんなで直せる形に写します）</span>' : ''}</div></div>`;
+}
+function searchHtml() {
+  const q = qText.trim().toLowerCase(); const ts = qTags;
+  const path = n => { const ps = []; let c = n; let g = 0; while (c && g++ < 20) { ps.unshift(c); c = nodes.find(x => x.id === c.parent); } return ps; };
+  const hits = nodes.filter(n => (!ts.length || ts.every(t => (n.tags || []).includes(t))) && (!q || [n.text, n.body, n.name].some(s => String(s || '').toLowerCase().includes(q)))).sort((a, b) => (b.edited || b.t || 0) - (a.edited || a.t || 0));
+  const sn = s => { s = String(s || ''); if (!q) return s.length > 80 ? s.slice(0, 80) + '…' : s; const i = s.toLowerCase().indexOf(q); const st = Math.max(0, i - 25); const o = s.slice(st, st + 90); return (st ? '…' : '') + o + (st + 90 < s.length ? '…' : ''); };
+  return `<div class="hint" style="margin:6px 0">${hits.length} 件${ts.length ? '（タグ: ' + ts.map(S.esc).join('・') + '）' : ''}${q ? `（「${S.esc(qText.trim())}」）` : ''}</div>` +
+    (hits.map(n => { const ps = path(n); const root = ps[0]; return `<div class="res" data-jump="${n.id}"><div class="path">${S.esc(mapName(root.map) || 'マップなし')} › ${ps.slice(0, -1).map(p => S.esc(p.text)).join(' › ')}</div><div class="rt">${S.esc(n.text)}<span class="tagsline">${(n.tags || []).map(t => tagHtml(t)).join('')}</span></div>${n.body ? `<div class="sn">${S.esc(sn(n.body))}</div>` : ''}<div class="path">${S.esc(n.name || '名無し')}・${S.fmtTime(n.edited || n.t)}</div></div>`; }).join('') || '<div class="hint">見つかりませんでした</div>');
 }
 // 書きかけを覚えてから描き直す（画像を選んだ時などに入力が消えないように）
-function snap() { if (!form || !$('#form')) return; form.draft = { title: $('#fTitle').value, body: $('#fBody').value, name: $('#fName').value, map: $('#fMap') ? $('#fMap').value : undefined }; }
+function snap() {
+  if (form && $('#form')) { form.draft = { title: $('#fTitle').value, body: $('#fBody').value, name: $('#fName').value, map: $('#fMap') ? $('#fMap').value : undefined }; if ($('#fPlace')) form.place = $('#fPlace').value; form.newTag = { ...(form.newTag || {}), text: $('#fNewTag') ? $('#fNewTag').value : '' }; }
+  if (pform && $('#pf')) pform.text = $('#pName').value;
+}
 function render() {
   snap();
-  const rs = roots().sort((a, b) => (a.t || 0) - (b.t || 0)); const pins = pinned();
+  const searching = qText.trim() || qTags.length;
+  $('#tagFilter').innerHTML = tags.map(t => tagHtml(t.text, 'tagbtn tagf ' + (qTags.includes(t.text) ? '' : 'off'))).join('') || '<span class="hint">（タグはまだ無い。項目を足す時に作れる）</span>';
+  $('#qClear').classList.toggle('hide', !searching);
+  $('#results').classList.toggle('hide', !searching); $('#normal').classList.toggle('hide', !!searching);
+  if (searching) { $('#results').innerHTML = searchHtml(); return; }
+  const rs = roots(); const pins = pinned();
   $('#rootForm').innerHTML = form && form.mode === 'add' && !form.parent ? formHtml() : '';
-  $('#tree').innerHTML = rs.length ? rs.map(n => nodeHtml(n, 0, pins.indexOf(n) + 1 || 0)).join('') : `<div class="hint" style="margin:12px 0">まだ項目はありません。${RO ? '' : (MAP ? '「＋ 地図に印を打って大項目」から始めてください。' : '「＋ 大項目を足す」から始めてください。')}</div>`;
+  $('#tree').innerHTML = rs.length ? rs.map(n => nodeHtml(n, 0, pins.indexOf(n) + 1 || 0)).join('') : `<div class="hint" style="margin:12px 0">${selPlace ? 'この地名の項目はまだありません。' : 'まだ項目はありません。'}${RO ? '' : (MAP ? '「＋ 地図に印を打って大項目」から始めてください。' : '「＋ 大項目を足す」から始めてください。')}</div>`;
+  if (MAP) {
+    $('#mapHint').textContent = pedit ? '' : (img ? '印をタップで大項目が開く・地名をタップでその場所だけに絞る' : '俯瞰図が無いマップ（格子）。印をタップで大項目が開く・地名をタップで絞る');
+    $('#peditBtn').textContent = pedit ? '✔ 地名の編集をおわる' : '✏ 地名を直す'; $('#peditBtn').classList.toggle('on', pedit);
+    $('#placeBar').innerHTML = mapPlaces().slice().sort((a, b) => a.text.localeCompare(b.text, 'ja')).map(p => `<button class="pl ${selPlace === p.id ? 'on' : ''}" data-pl="${p.id}">${S.esc(p.text)}</button>`).join('');
+    $('#placeForm').innerHTML = placeFormHtml();
+    const p = selPlace && placeOf(selPlace); $('#placeFilter').classList.toggle('hide', !p); if (p) $('#placeFilter').innerHTML = `📍 「${S.esc(p.text)}」の項目だけ（${rs.length} 件） <button class="sm" data-plclear="1">全部に戻す</button>`;
+  } else $('#placeFilter').classList.add('hide');
   draw();
   document.querySelectorAll('canvas.kico').forEach(k => S.drawPinIcon(k.getContext('2d'), k.dataset.k, 13, 13, 11));
   const f = $('#form'); if (f && form && form.focus) { form.focus = false; if (!form.placing) { f.scrollIntoView({ behavior: 'smooth', block: 'center' }); const ti = $('#fTitle'); ti && ti.focus(); } }
@@ -191,12 +278,52 @@ function render() {
 // ---- 操作 ----
 function startForm(f) {
   const n = f.mode === 'edit' ? nodes.find(x => x.id === f.id) : null;
-  form = { ...f, focus: true, isRoot: f.mode === 'edit' ? !(n && n.parent) : !f.parent, kind: (n && n.kind) || 'soldier', pos: n && n.x != null ? { x: n.x, y: n.y } : null, placing: false };
+  form = { ...f, focus: true, isRoot: f.mode === 'edit' ? !(n && n.parent) : !f.parent, kind: (n && n.kind) || 'soldier', pos: n && n.x != null ? { x: n.x, y: n.y } : null, placing: false, tags: n ? [...(n.tags || [])] : [], place: n ? (n.place || '') : (selPlace || '') };
   if (form.mode === 'add' && form.isRoot && MAP && !RO) { form.placing = true; msg('👆 地図の、印を打ちたい所をタップ'); cv.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   picked = []; keepImgs = n ? [...(n.imgs || [])] : []; render();
 }
+async function jump(id) {
+  const n = nodes.find(x => x.id === id); if (!n) return;
+  let c = n, root = n, g = 0; while (c && g++ < 20) { openState[c.id] = true; root = c; c = nodes.find(x => x.id === c.parent); } saveOpen();
+  qText = ''; qTags = []; $('#q').value = ''; selPlace = null;
+  const mid = root.map || ''; if ($('#mapSel').value !== mid) { $('#mapSel').value = [...$('#mapSel').options].some(o => o.value === mid) ? mid : ''; await setMap($('#mapSel').value); }
+  hi = id; render();
+  const el = document.querySelector(`.node[data-id="${id}"]`); el && el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+async function placesToStore() { // 元からの地名をこのマップの分だけ置き場に写す（1 回だけ）
+  if (!MAP || places.some(p => p.map === MAP.id)) return;
+  for (const c of (MAP.callouts || [])) await S.add('places', { text: c[0], map: MAP.id, x: c[1], y: c[2] });
+  places = await S.list('places');
+}
 document.addEventListener('click', async ev => {
   const t = ev.target; const ds = t.dataset;
+  if (ds.jump) { jump(ds.jump); return; }
+  if (t.classList.contains('tagf')) { const nm = ds.tagname; qTags = qTags.includes(nm) ? qTags.filter(x => x !== nm) : [...qTags, nm]; render(); return; }
+  if (t.id === 'qClear') { qText = ''; qTags = []; $('#q').value = ''; render(); return; }
+  if (ds.pl) { selPlace = selPlace === ds.pl ? null : ds.pl; hi = null; render(); return; }
+  if (ds.plclear) { selPlace = null; render(); return; }
+  if (t.id === 'peditBtn') { pedit = !pedit; pform = null; form = null; render(); if (pedit) cv.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+  if (t.closest('#pf') || ds.pdone) {
+    if (ds.pdone) { pedit = false; pform = null; render(); return; }
+    if (ds.pcancel) { pform = null; render(); return; }
+    if (ds.pmove) { snap(); pform.placing = true; render(); cv.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (ds.pdel) {
+      snap(); if (!confirm(`地名「${pform.origText || pform.text}」を消しますか？`)) return;
+      try { if (pform.seed) { await placesToStore(); const f2 = places.find(p => p.map === MAP.id && p.text === pform.origText); if (f2) await S.remove('places', f2.id); } else await S.remove('places', pform.id); places = await S.list('places'); pform = null; msg('地名を消しました'); render(); } catch (e) { msg('消せませんでした'); }
+      return;
+    }
+    if (ds.psave) {
+      snap(); const nm = pform.text.trim(); if (!nm) { msg('地名を入れてください'); return; }
+      try {
+        const seeded = !places.some(p => p.map === MAP.id); await placesToStore();
+        let pid = pform.id; if (pform.seed) { const found = places.find(p => p.map === MAP.id && p.text === pform.origText); pid = found ? found.id : null; }
+        if (pid) await S.update('places', pid, { text: nm, x: pform.pos.x, y: pform.pos.y, edited: Date.now() }); else await S.add('places', { text: nm, map: MAP.id, x: pform.pos.x, y: pform.pos.y });
+        places = await S.list('places'); pform = null; msg(seeded ? '地名を保存しました（このマップの地名をみんなで直せる形にしました）' : '地名を保存しました'); render();
+      } catch (e) { msg('保存できませんでした'); }
+      return;
+    }
+    return;
+  }
   if (t.closest('#form')) {
     if (ds.pick) { $('#fImg').click(); return; }
     if (ds.unpick != null) { picked.splice(+ds.unpick, 1); render(); return; }
@@ -204,6 +331,13 @@ document.addEventListener('click', async ev => {
     if (ds.kind) { form.kind = ds.kind; render(); return; }
     if (ds.place) { form.placing = true; msg('👆 地図の、印を打ちたい所をタップ'); render(); cv.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (ds.unplace) { form.pos = null; form.placing = false; render(); return; }
+    if (ds.tagname) { const nm = ds.tagname; form.tags = form.tags.includes(nm) ? form.tags.filter(x => x !== nm) : [...form.tags, nm]; render(); return; }
+    if (ds.sw) { snap(); form.newTag = { ...(form.newTag || {}), color: ds.sw }; render(); return; }
+    if (ds.addtag) {
+      snap(); const nm = (form.newTag.text || '').trim(); if (!nm) { msg('タグの名前を入れてください'); return; }
+      if (!tagOf(nm)) { try { await S.add('tags', { text: nm, color: form.newTag.color || PAL[0] }); tags = await S.list('tags'); } catch (e) { msg('タグを作れませんでした'); return; } }
+      if (!form.tags.includes(nm)) form.tags.push(nm); form.newTag = { color: form.newTag.color }; $('#fNewTag').value = ''; render(); return;
+    }
     if (t.id === 'fCancel') { form = null; picked = []; msg(''); render(); return; }
     if (t.id === 'fSend') { await send(); return; }
     return;
@@ -214,6 +348,7 @@ document.addEventListener('click', async ev => {
   if (ds.del) { const n = nodes.find(x => x.id === ds.del); if (!n) return; if (hasKids(n.id)) { msg('下に項目があるので消せません'); return; } if (!confirm(`「${n.text}」を消しますか？`)) return; await S.remove(COL, n.id); msg('消しました'); await refresh(); return; }
   const hd = t.closest('.nhead'); if (hd) { const id = hd.dataset.tg; const n = nodes.find(x => x.id === id); const d = +hd.parentElement.dataset.d; openState[id] = !isOpen(n, d); saveOpen(); if (!d) hi = (n.x != null) ? id : null; render(); return; }
 });
+$('#q').addEventListener('input', () => { qText = $('#q').value; render(); });
 document.addEventListener('change', async ev => {
   const inp = ev.target; if (inp.id !== 'fImg') return;
   const files = [...inp.files]; inp.value = ''; if (!files.length) return;
@@ -223,12 +358,15 @@ document.addEventListener('change', async ev => {
 async function send() {
   const title = $('#fTitle').value.trim(); const body = $('#fBody').value.replace(/\s+$/, ''); const name = $('#fName').value.trim();
   if (!title) { msg('項目の名前を入れてください'); $('#fTitle').focus(); return; }
-  saveName(name); $('#fSend').classList.add('busy'); msg(picked.length ? '画像を送っています…' : '送っています…');
+  snap(); saveName(name); $('#fSend').classList.add('busy'); msg(picked.length ? '画像を送っています…' : '送っています…');
   try {
     const imgs = [...keepImgs]; for (const p of picked) { const id = await S.putImage(p.full); imgs.push({ id, thumb: p.thumb }); }
-    const posF = form.isRoot ? { x: form.pos ? form.pos.x : null, y: form.pos ? form.pos.y : null, kind: form.kind } : {};
-    if (form.mode === 'edit') { await S.update(COL, form.id, { text: title, body, imgs, edited: Date.now(), editor: name, ...posF }); msg('直しました'); }
-    else { const map = form.parent ? '' : (MAP ? MAP.id : ($('#fMap') ? $('#fMap').value : '')); const r = await S.add(COL, { text: title, body, parent: form.parent || '', map, imgs, name, ...posF }); openState[r.id] = true; saveOpen(); if (form.isRoot && posF.x != null) hi = r.id; msg('足しました'); }
+    let place = form.place || '';
+    if (place) { const sp = placeOf(place); if (sp && sp.seed) { await placesToStore(); const f2 = places.find(p => p.map === MAP.id && p.text === sp.text); place = f2 ? f2.id : ''; } }
+    const posF = form.isRoot ? { x: form.pos ? form.pos.x : null, y: form.pos ? form.pos.y : null, kind: form.kind, place } : {};
+    const tg = form.tags || [];
+    if (form.mode === 'edit') { await S.update(COL, form.id, { text: title, body, imgs, tags: tg, edited: Date.now(), editor: name, ...posF }); msg('直しました'); }
+    else { const map = form.parent ? '' : (MAP ? MAP.id : ($('#fMap') ? $('#fMap').value : '')); const r = await S.add(COL, { text: title, body, parent: form.parent || '', map, imgs, tags: tg, name, ...posF }); openState[r.id] = true; saveOpen(); if (form.isRoot && posF.x != null) hi = r.id; msg('足しました'); }
     form = null; picked = []; keepImgs = []; await refresh();
   } catch (e) { msg('送れませんでした（置き場に届きません）'); const b = $('#fSend'); b && b.classList.remove('busy'); }
 }
@@ -240,11 +378,12 @@ $('#colAll').onclick = () => { nodes.forEach(n => openState[n.id] = false); save
 $('#mapSel').onchange = () => { form = null; try { localStorage.setItem('saz-tree-map', $('#mapSel').value); } catch (e) {} setMap($('#mapSel').value); };
 const q = new URLSearchParams(location.search); let m0 = q.get('map'); if (m0 == null) { try { m0 = localStorage.getItem('saz-tree-map'); } catch (e) {} } if (m0 == null) m0 = DB.maps[0].id;
 if ([...$('#mapSel').options].some(o => o.value === m0)) $('#mapSel').value = m0;
-nodes = await S.list(COL); byParent = {}; for (const n of nodes) (byParent[n.parent || ''] ||= []).push(n);
+if (q.get('tag')) qTags = [q.get('tag')]; if (q.get('q')) { qText = q.get('q'); $('#q').value = qText; }
+[nodes, tags, places] = await Promise.all([S.list(COL), S.list('tags'), S.list('places')]); index();
 await setMap($('#mapSel').value);
-const auto = () => { if (document.visibilityState === 'visible' && !form) refresh(); };
+const auto = () => { if (document.visibilityState === 'visible' && !form && !pform) refresh(); };
 document.addEventListener('visibilitychange', auto); setInterval(auto, 30000);
-window.__tree = { get ready() { return true; }, nodes: () => nodes, get form() { return form; }, pinned, get map() { return MAP; } };
+window.__tree = { get ready() { return true; }, nodes: () => nodes, get form() { return form; }, pinned, get map() { return MAP; }, tags: () => tags, places: () => places, jump, get state() { return { selPlace, pedit, qText, qTags }; } };
 })();
 </script>
 </body>
